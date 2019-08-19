@@ -1,12 +1,9 @@
-#' Process directory to xy data
+#' Process directory of raw data to xy data
 #'
-#' @param format
-#' @param dir
+#' @param format One of "tobii", "smi", "eyelink"
+#' @param dir Director with raw data
 #'
-#' @return
 #' @export
-#'
-#' @examples
 process_to_xy <- function(format, dir) {
   readers <- list(
     "tobii" = process_tobii,
@@ -18,18 +15,38 @@ process_to_xy <- function(format, dir) {
   reader(dir)
 }
 
+#' Process tobii raw data
+#'
+#' @param dir Director with raw data
+#'
+#' @export
 process_tobii <- function(dir) {
 
 }
 
+#' Process smi raw data
+#'
+#' @param dir Director with raw data
+#'
+#' @export
 process_smi <- function(dir) {
 
 }
 
+#' Process eyelink raw data
+#'
+#' @param dir Director with raw data
+#'
+#' @export
 process_eyelink <- function(dir) {
 
 }
 
+#' Generate aoi data from xy data
+#'
+#' @param dir Directory with xy data and metadata
+#'
+#' @export
 generate_aoi <- function(dir) {
   validate_for_aoi_conversion(dir)
   # read in xy_data, trials, aoa_coordinates
