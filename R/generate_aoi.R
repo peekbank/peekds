@@ -26,9 +26,6 @@ generate_aoi <- function(dir) {
     mutate(t_trial = t - t[1],
            t_zeroed = t_trial - point_of_disambiguation)
 
-
-  # resample and interpolate
-
   # set sample rates
   SAMPLE_RATE = 30 # Hz
   MAX_GAP_LENGTH = .100 # S
@@ -40,16 +37,21 @@ generate_aoi <- function(dir) {
     lubridate::origin + lubridate::seconds(1/SAMPLE_RATE), ".001 sec"))
 
   # sample data with missingness and heterogeneous timing
-  test_data <- tsibble::as_tsibble(
-    tibble(aoi = c(rep("target", 5), NA, rep("distractor", 5), "other"),
-           t = c(lubridate::origin +
-                   lubridate::seconds(1/30)*(1:10),
-                 lubridate::origin +
-                   lubridate::seconds(1/30)*14,
-                 lubridate::origin +
-                   lubridate::seconds(1/30)*24)),
-    index = t, regular = FALSE) %>%
-    mutate(t_num = as.numeric(t))
+
+  # test_data <-
+  #   tibble(aoi = c(rep("target", 5), NA, rep("distractor", 5), "other"),
+  #          t_zeroed = c(lubridate::origin +
+  #                  lubridate::seconds(1/30)*(1:10),
+  #                lubridate::origin +
+  #                  lubridate::seconds(1/30)*14,
+  #                lubridate::origin +
+  #                  lubridate::seconds(1/30)*24))
+  #
+  # xy_joined <- bind_rows(test_data, test_data) %>%
+  #   mutate(sub_id = c(rep(1, 12),rep(2, 12)),
+  #          trial_id = 1)
+
+  # tentative solution to RESAMPLING and INTERPRETATION
 
   # round to fine sample rate
   # collapse observations within those samples
@@ -58,33 +60,28 @@ generate_aoi <- function(dir) {
   # recollapse observations
   # interpolate across gaps
 
-  processed_data <- test_data %>%
-    tsibble::index_by(
-      t_regular = ~ lubridate::round_date(., paste0(sample_rate_fine," sec"))) %>%
-    summarise(aoi = na_mode(aoi)) %>%
-    tsibble::fill_gaps() %>%
-    tsibble::index_by(
-      t = ~ lubridate::round_date(., paste0(sample_rate_rounded," sec"))) %>%
-    summarise(aoi = na_mode(aoi)) %>%
-    mutate(aoi = zoo::na.locf(aoi, maxgap = MAX_GAP_SAMPLES),
-           t = as.numeric(t)) %>%
-    as_tibble()
+  aoi <- xy_joined %>%
+    group_by(sub_id, trial_id) %>%
+    nest() %>%
+    mutate(data = map(data,
+                      function(data) {
+      data %>%
+             tsibble::as_tsibble(index = t_zeroed, regular = FALSE) %>%
+             tsibble::index_by(
+               t_regular = ~ lubridate::round_date(., paste0(sample_rate_fine," sec"))) %>%
+             summarise(aoi = na_mode(aoi)) %>%
+             tsibble::fill_gaps() %>%
+             tsibble::index_by(
+               t = ~ lubridate::round_date(., paste0(sample_rate_rounded," sec"))) %>%
+             summarise(aoi = na_mode(aoi)) %>%
+             mutate(aoi = zoo::na.locf(aoi, maxgap = MAX_GAP_SAMPLES), # last observation carried forward
+                    t = as.numeric(t)) %>%
+             as_tibble()
+      })) %>%
+    unnest(data)
+
+  write_csv(aoi, file.path(dir, "aoi_data.csv"))
 }
-
-na_mode <- function (x) {
-  if (all(is.na(x))) {
-    return(as.character(NA))
-  } else {
-    x_nona <- x[!is.na(x)]
-
-    # https://stackoverflow.com/questions/2547402/is-there-a-built-in-function-for-finding-the-mode
-    ux <- unique(x_nona)
-    x_mode <- ux[which.max(tabulate(match(x_nona, ux)))]
-
-    return(x_mode)
-  }
-}
-
 
 #' Generate aoi data from xy data
 #'
