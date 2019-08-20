@@ -300,7 +300,7 @@ process_smi <- function(dir, file_ext = '.txt') {
     bind_rows()
   
   dataset_data <- all_data %>%
-    map("xy") %>%
+    map("dataset") %>%
     bind_rows()
   
   #save data
