@@ -1,3 +1,9 @@
+# load libraries
+
+
+# the tables required for every processed datasets
+table_list <<- c("xy_data", "aoi_data", "participants", "trials", "dataset", "aoi_coordinates")
+
 #' Function for map raw data columns to processed table columns
 #'
 #' @param raw_data raw dara frame
@@ -14,28 +20,37 @@
 #' 
 #' @export
 map_columns <- function(raw_data, raw_format, table_type) {
-  # dir_mapping won't be an input parameter, but the function by default
-  # assumes that this function should be in import_scripts/import_header.csv
+  # dir_mapping won't be an input parameter, instead the function by default
+  # assumes that this file should be in import_scripts/import_header.csv
   file_header <- "import_header.csv"
+  if (!file.exists(file_header)) {
+    stop("'import_header.csv' file is required for processing raw data.\n")
+  }
   
   ## STEP 0. read in raw datafiles and the column names
   df_header <- read.csv(file=file_header, header=TRUE, sep=",")
   df_raw <- raw_data
   df_map <- df_header[
     which((df_header$format == raw_format) & (df_header$table == table_type)), ]
+  if (nrow(df_map) == 0) {
+    warning("User did not provide mapping columns between raw data and table ", 
+             table_type, " in 'import_scripts/import_header.csv'. Thus ", 
+             table_type, " table is not processed.\n")
+    return(NULL)
+  }
   colnames_raw <- colnames(df_raw)
   
-  ## search through raw data table and find desired columns, 
-  ## if they did not exist, then just create an empty column with NA values
   colnames_fetch <- as.vector(df_map[, "raw_column"])
   colnames_map <- as.vector(df_map[, "mapped_column"])
   
-  ## create new data table
+  ## create new data table with NA values
   df_table <- data.frame(
     matrix(
       ncol = length(colnames_map), nrow = nrow(df_raw)))
   colnames(df_table) <- colnames_map
   
+  ## search through raw data table and find desired columns, 
+  ## if they did not exist, then just the column will be left with NA values
   for (i in 1:length(colnames_fetch)) {
     if (colnames_fetch[i] %in% colnames_raw) {
       df_table[i] = df_raw[colnames_fetch[i]]
@@ -47,6 +62,28 @@ map_columns <- function(raw_data, raw_format, table_type) {
   return(df_table)
 }
 
+
+#' supporting function for saving processed table as csv files in processed_data/
+#'
+#' @param df_procd processed data frame
+#' @param table_type type of table to be saved
+#'
+#' @return null
+#' 
+#' @export
+save_table <- function(df_procd, table_type) {
+  # because of the standardized data structure, processed csvs need to be under 
+  # "[dataset_name]/processed_data"
+  dir_procd <- "../processed_data"
+    
+  # save processed data table in csv file
+  # create dir for saving processed data if this directory does not exist
+  if (!file.exists(dir_procd)) {
+    dir.create(dir_procd)
+  }
+  write.csv(df_procd, file.path(
+    dir_procd, paste(table_type, ".csv", sep="")), row.names=FALSE)
+}
 
 #' Process directory of raw data to xy data
 #'
@@ -71,8 +108,16 @@ process_to_xy <- function(format, dir) {
 #' @param dir Director with raw data
 #'
 #' @export
-process_tobii <- function(dir) {
-
+process_tobii <- function(dir_raw) {
+  raw_format = "tobii"
+  # read in raw data frame from file oi
+  raw_data <- read.table(file = dir_raw, sep = '\t', header = TRUE)
+  # call mapping function to create the list of tables
+  for (table in table_list) {
+    df_table <- map_columns(
+      raw_data = raw_data, raw_format = raw_format, table_type = table)
+    save_table(save_table = df_table, table_type = table)
+  }
 }
 
 #' Process smi raw data
