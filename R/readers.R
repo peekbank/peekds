@@ -4,7 +4,8 @@ library(tidyverse)
 library(reader)
 
 # the tables required for every processed datasets
-table_list <<- c("xy_data", "aoi_data", "participants", "trials", "dataset", "aoi_coordinates")
+table_list <<- c("xy_data", "aoi_data", "participants", "trials", "dataset", "aoi_regions")
+
 
 #' Function for map raw data columns to processed table columns
 #'
@@ -17,8 +18,6 @@ table_list <<- c("xy_data", "aoi_data", "participants", "trials", "dataset", "ao
 #' @examples
 #' df_xy_data <- map_columns(raw_data = raw_data, raw_format = "tobii", table_type = "xy_data")
 #' df_aoi_data <- map_columns(raw_data = raw_data, raw_format = "tobii", table_type = "aoi_data")
-#' 
-#' @author for debug or change, contact Linger -- linger.xt@gmail.com
 #' 
 #' @export
 map_columns <- function(raw_data, raw_format, table_type) {
@@ -118,7 +117,7 @@ process_tobii <- function(dir_raw) {
   for (table in table_list) {
     df_table <- map_columns(
       raw_data = raw_data, raw_format = raw_format, table_type = table)
-    save_table(df_procd=df_table, table_type = table)
+    save_table(df_procd = df_table, table_type = table)
   }
 }
 
