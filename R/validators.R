@@ -5,26 +5,31 @@ validate_for_aoi_conversion <- function(dir) {
   # check for xy_data, trials, aoa_coordinates
 }
 
-#' Title
+#' get json file from peekbank github
 #'
-#' @return
-#' @export
+#' @return peekjson -- the organized dataframe from json file
 #'
 #' @examples
+#' peekjson <- get_peekjson()
+#' 
+#' @export
 get_peekjson <- function() {
   url_json <- "https://raw.githubusercontent.com/langcog/peekbank/master/static/peekbank-schema.json"
   peekjson <- fromJSON(url(url_json))
   return(peekjson)
 }
 
-#' Title
+#' Fetching the list of column names in each table according to the json file
 #'
-#' @param table_type 
+#' @param table_type the type of table, can be one of this six types:  
+#'                   xy_data, aoi_data, participants, trials, dataset, aoi_regions
 #'
-#' @return
-#' @export
+#' @return colnames_json -- the list of column names
 #'
 #' @examples
+#' colnames_json <- get_json_colnames(table_type = "aoi_data")
+#' 
+#' @export
 get_json_colnames <- function(table_type) {
   # get json file from github
   peekjson <- get_peekjson()
@@ -45,15 +50,18 @@ get_json_colnames <- function(table_type) {
   return(colnames_json)
 }
 
-#' Title
+#' Check if the table is EtDS compliant before saving as csv or importing into database
 #'
-#' @param df_table 
-#' @param table_type 
+#' @param df_table the data frame to be saved
+#' @param table_type the type of table, can be one of this six types:  
+#'                   xy_data, aoi_data, participants, trials, dataset, aoi_regions
 #'
 #' @return TRUE when the column names of this table are valid
-#' @export
 #'
 #' @examples
+#' is_valid <- validate_table(df_table = df_table, table_type = "xy_data")
+#' 
+#' @export
 validate_table <- function(df_table, table_type) {
   colnames_table <- colnames(df_table)
   colnames_json <- get_json_colnames(table_type = table_type)
@@ -62,9 +70,10 @@ validate_table <- function(df_table, table_type) {
     return(FALSE)
   }
   
-  mask_vali <- colnames_json %in% colnames_table
-  if (!all(mask_vali)) {
-    warning("Cannot locate fields: ", paste0(colnames_json[!mask_vali], collapse = ", "), 
+  # check if all 
+  mask_valid <- colnames_json %in% colnames_table
+  if (!all(mask_valid)) {
+    warning("Cannot locate fields: ", paste0(colnames_json[!mask_valid], collapse = ", "), 
             " in the table.")
     return(FALSE)
   } else {
@@ -72,16 +81,18 @@ validate_table <- function(df_table, table_type) {
   }
 }
 
-# check all csv files against database schema
-#' Title
+# check all csv files against database schema for database import
 #'
-#' @param dir_csv 
-#' @param file_ext 
+#' @param dir_csv the folder directory containing all the csv files, 
+#'                the path should end in "processed_data"
+#' @param file_ext the default is ".csv"
 #'
-#' @return
-#' @export
+#' @return TRUE only if all the csv files have valid columns
 #'
 #' @examples
+#' is_valid = validate_for_db_import(dir_csv = "smi_dataset/processed_data")
+#' 
+#' @export
 validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
   # get json file from github
   peekjson <- get_peekjson()
