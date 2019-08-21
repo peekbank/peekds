@@ -146,7 +146,7 @@ process_smi_file <- function(x, dir, stims_to_remove_chars=c(".avi"), stims_to_k
   sep <- get.delim(file_path, comment="#", delims=possible_delims,skip = max_lines_search)
   
   #extract information about subject, monitor size, and sample rate from header
-  sub_id <- read_lines(file_path, n_max=max_lines_search) %>%
+  subject_id <- read_lines(file_path, n_max=max_lines_search) %>%
     str_subset(subid_name) %>% 
     str_extract(paste("(?<=",subid_name,":\\t).*",sep="")) %>%
     trimws()
@@ -197,7 +197,7 @@ process_smi_file <- function(x, dir, stims_to_remove_chars=c(".avi"), stims_to_k
   
   # add sub_id column (extracted from data file)
   data <- data %>%
-    mutate(sub_id=sub_id)
+    mutate(subject_id=subject_id)
   
   #### General eyetracking data processing
   
