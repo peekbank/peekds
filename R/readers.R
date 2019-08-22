@@ -4,7 +4,7 @@
 NULL
 
 # the tables required for every processed datasets
-table_list <- c("xy_data", "aoi_data", "participants", "trials", "dataset", "aoi_regions")
+table_list <- c("subjects", "trials", "dataset", "aoi_regions", "xy_data", "aoi_data")
 
 
 #' Function for map raw data columns to processed table columns
