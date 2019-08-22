@@ -26,14 +26,10 @@ generate_aoi <- function(dir) {
                   t_zeroed = .data$t_trial - .data$point_of_disambig)
 
   # set sample rates
-  SAMPLE_RATE = 30 # Hz
+  SAMPLE_RATE = 40 # Hz
+  SAMPLE_DURATION = 1000/SAMPLE_RATE
   MAX_GAP_LENGTH = .100 # S
   MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
-
-  sample_rate_fine <- as.numeric(lubridate::round_date(
-    lubridate::origin + lubridate::seconds(1/SAMPLE_RATE), ".000001 sec"))
-  sample_rate_rounded <- as.numeric(lubridate::round_date(
-    lubridate::origin + lubridate::seconds(1/SAMPLE_RATE), ".001 sec"))
 
   # resample and interpolate
   aoi <- xy_joined %>%
@@ -42,20 +38,28 @@ generate_aoi <- function(dir) {
     dplyr::mutate(
       data = .data$data %>%
         purrr::map(function(df) {
-          tibble::tibble(t_zeroed = seq(min(df$t_zeroed),
-                                       max(df$t_zeroed),
-                                       round(1000/SAMPLE_RATE))) %>%
-            fuzzyjoin::difference_left_join(select(df,
-                                                   t_zeroed, aoi),
-                                            max_dist = round(1000/SAMPLE_RATE)/2) %>%
-            dplyr::group_by(t_zeroed.x) %>%
+          df_rounded <- df %>%
+            dplyr::select(t_zeroed, aoi) %>%
+            dplyr::mutate(t_zeroed = round(SAMPLE_DURATION * round(t_zeroed/SAMPLE_DURATION)))
+
+          t_resampled <- tibble::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
+                                                             max(df_rounded$t_zeroed),
+                                                             SAMPLE_DURATION)))
+
+
+          dplyr::left_join(t_resampled, df_rounded) %>%
+            # fuzzyjoin::difference_left_join(select(df,
+            #                                        t_zeroed, aoi),
+            #                                 max_dist = round(1000/SAMPLE_RATE)/2) %>%
+            dplyr::group_by(t_zeroed) %>%
             dplyr::summarise(aoi = na_mode(aoi)) %>%
-            dplyr::rename(t = t_zeroed.x) %>%
+            dplyr::rename(t = t_zeroed) %>%
             dplyr::mutate(aoi = zoo::na.locf(aoi,
                                              maxgap = MAX_GAP_SAMPLES,
                                              na.rm=FALSE)) # last observation carried forward
-        })) %>%
-    tidyr::unnest(.data$data)
+          })) %>%
+    tidyr::unnest(.data$data) %>%
+    mutate(aoi_data_id = 0:(n() - 1))
 
   readr::write_csv(aoi, file.path(dir, "aoi_data.csv"))
 }
