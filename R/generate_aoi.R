@@ -4,27 +4,26 @@
 #'
 #' @export
 generate_aoi <- function(dir) {
-  validate_for_aoi_conversion(dir)
+  # validate_for_aoi_conversion(dir)
 
   # read in xy_data, trials, aoa_coordinates
   xy <- readr::read_csv(file.path(dir, "xy_data.csv"))
   trials <- readr::read_csv(file.path(dir, "trials.csv"))
-  aoi_coordinates <- readr::read_csv(file.path(dir, "aoi_coordinates.csv"))
+  aoi_regions <- readr::read_csv(file.path(dir, "aoi_regions.csv"))
 
   xy_joined <- xy %>%
-    dplyr::left_join(aoi_coordinates) %>%
-    dplyr::left_join(trials)
+    dplyr::left_join(trials) %>%
+    dplyr::left_join(aoi_regions)
 
   # assign aoa based on aoa_coordinates
   # find correct aoi based on trials
   xy_joined <- add_aois(xy_joined)
 
   # center timestamp (0 POD)
-  # TODO: check if POD is unique
   xy_joined <- xy_joined %>%
-    dplyr::group_by(.data$subid, .data$trial_id) %>%
+    dplyr::group_by(.data$subject_id, .data$trial_id) %>%
     dplyr::mutate(t_trial = .data$t - .data$t[1],
-                  t_zeroed = .data$t_trial - .data$point_of_disambiguation)
+                  t_zeroed = .data$t_trial - .data$point_of_disambig)
 
   # set sample rates
   SAMPLE_RATE = 30 # Hz
@@ -36,48 +35,26 @@ generate_aoi <- function(dir) {
   sample_rate_rounded <- as.numeric(lubridate::round_date(
     lubridate::origin + lubridate::seconds(1/SAMPLE_RATE), ".001 sec"))
 
-  # sample data with missingness and heterogeneous timing
-
-  # test_data <-
-  #   tibble(aoi = c(rep("target", 5), NA, rep("distractor", 5), "other"),
-  #          t_zeroed = c(lubridate::origin +
-  #                  lubridate::seconds(1/30)*(1:10),
-  #                lubridate::origin +
-  #                  lubridate::seconds(1/30)*14,
-  #                lubridate::origin +
-  #                  lubridate::seconds(1/30)*24))
-  #
-  # xy_joined <- bind_rows(test_data, test_data) %>%
-  #   mutate(sub_id = c(rep(1, 12),rep(2, 12)),
-  #          trial_id = 1)
-
-  # tentative solution to RESAMPLING and INTERPRETATION
-
-  # round to fine sample rate
-  # collapse observations within those samples
-  # fill gaps - because of rounding issues, creates duplicates
-  # round to coarse sample rate
-  # recollapse observations
-  # interpolate across gaps
-
+  # resample and interpolate
   aoi <- xy_joined %>%
-    dplyr::group_by(.data$sub_id, .data$trial_id) %>%
+    dplyr::group_by(.data$subject_id, .data$trial_id) %>%
     tidyr::nest() %>%
-    dplyr::mutate(data = .data$data %>%
-                    purrr::map(function(df) {
-                      df %>%
-                        tsibble::as_tsibble(index = .data$t_zeroed, regular = FALSE) %>%
-                        tsibble::index_by(
-                          t_regular = ~ lubridate::round_date(., paste0(sample_rate_fine," sec"))) %>%
-                        dplyr::summarise(aoi = na_mode(aoi)) %>%
-                        tsibble::fill_gaps() %>%
-                        tsibble::index_by(
-                          t = ~ lubridate::round_date(., paste0(sample_rate_rounded," sec"))) %>%
-                        dplyr::summarise(aoi = na_mode(aoi)) %>%
-                        dplyr::mutate(aoi = zoo::na.locf(aoi, maxgap = MAX_GAP_SAMPLES), # last observation carried forward
-                                      t = as.numeric(t)) %>%
-                        dplyr::as_tibble()
-                    })) %>%
+    dplyr::mutate(
+      data = .data$data %>%
+        purrr::map(function(df) {
+          tibble::tibble(t_zeroed = seq(min(df$t_zeroed),
+                                       max(df$t_zeroed),
+                                       round(1000/SAMPLE_RATE))) %>%
+            fuzzyjoin::difference_left_join(select(df,
+                                                   t_zeroed, aoi),
+                                            max_dist = round(1000/SAMPLE_RATE)/2) %>%
+            dplyr::group_by(t_zeroed.x) %>%
+            dplyr::summarise(aoi = na_mode(aoi)) %>%
+            dplyr::rename(t = t_zeroed.x) %>%
+            dplyr::mutate(aoi = zoo::na.locf(aoi,
+                                             maxgap = MAX_GAP_SAMPLES,
+                                             na.rm=FALSE)) # last observation carried forward
+        })) %>%
     tidyr::unnest(.data$data)
 
   readr::write_csv(aoi, file.path(dir, "aoi_data.csv"))
@@ -92,10 +69,10 @@ add_aois <- function(xy_joined) {
   xy_joined %<>%
     dplyr:: mutate(
       side = dplyr::case_when(
-        x > l_xmin & x < l_xmax & y > l_ymin & y < l_ymax ~ "left",
-        x > r_xmin & x < r_xmax & y > r_ymin & y < r_ymax ~ "right",
+        x > l_x_min & x < l_x_max & y > l_y_min & y < l_y_max ~ "left",
+        x > r_x_min & x < r_x_max & y > r_y_min & y < r_y_max ~ "right",
         !is.na(x) & !is.na(y) ~ "other",
-        TRUE ~ NA),
+        TRUE ~ as.character(NA)),
       aoi = dplyr::case_when(
         side %in% c("left","right") & side == target_side ~ "target",
         side %in% c("left","right") & side != target_side ~ "distractor",
