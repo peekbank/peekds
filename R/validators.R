@@ -51,6 +51,29 @@ get_json_colnames <- function(table_type) {
   return(colnames_json)
 }
 
+#' Title
+#'
+#' @param dataset_type
+#'
+#' @return
+#' @export
+#'
+#' @examples
+list_check_tables <- function(dataset_type = "automated") {
+  # handcoded, automated
+  dstype_list <<- c("automated", "handcoded")
+
+  if (dataset_type == "automated") {
+    table_list <- c("subjects", "trials", "aoi_regions", "datasets", "xy_data", "aoi_data")
+  } else if (dataset_type == "handcoded") {
+    table_list <- c("subjects", "trials", "aoi_regions", "datasets")
+  } else {
+    stop("Invalid database type! The type can only be one of the following: ",
+         paste0(dstype_list, collapse = ", "), ".")
+  }
+  return(table_list)
+}
+
 #' Check if the table is EtDS compliant before saving as csv or importing into database
 #'
 #' @param df_table the data frame to be saved
@@ -76,8 +99,8 @@ validate_table <- function(df_table, table_type) {
   # check if all
   mask_valid <- colnames_json %in% colnames_table
   if (!all(mask_valid)) {
-    warning("Cannot locate fields: ", paste0(colnames_json[!mask_valid], collapse = ", "),
-            " in the table.")
+    stop("Cannot locate fields: ", paste0(colnames_json[!mask_valid], collapse = ", "),
+            " in the table. Please add them into the csv files.")
     return(FALSE)
   } else {
     return(TRUE)
@@ -98,11 +121,13 @@ validate_table <- function(df_table, table_type) {
 #' }
 #'
 #' @export
-validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
+validate_for_db_import <- function(dataset_type, dir_csv, file_ext = '.csv') {
   # get json file from github
   peekjson <- get_peekjson()
   # fetch the table list
-  table_list <- as.vector(peekjson[, "table"])
+  table_list <- list_check_tables(dataset_type)
+  # admin table is not required
+  table_list <- table_list[table_list != "admin"];
   is_all_valid = TRUE
 
   for (table_type in table_list) {
@@ -112,13 +137,13 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
       df_table <- utils::read.csv(file_csv)
       is_valid <- validate_table(df_table, table_type)
       if (!is_valid) {
-        warning("The csv file '", table_type,
-                "' does not have the right format for database import.")
         is_all_valid = FALSE
+        stop("The csv file '", table_type,
+                "' does not have the right format for database import.")
       }
     } else {
-      warning("Cannot find csv file: ", file_csv)
       is_all_valid = FALSE
+      stop("Cannot find file: ", file_csv)
     }
   }
   return(is_all_valid)
