@@ -46,7 +46,7 @@ get_json_colnames <- function(table_type) {
   # get the list of column names in json
   fields_json <-
     peekjson[which(peekjson$table == table_type), "fields"] %>%
-    jsonlite::flatten()
+    purrr::flatten()
   colnames_json <- fields_json$field_name
   return(colnames_json)
 }
