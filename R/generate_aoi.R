@@ -23,7 +23,7 @@ generate_aoi <- function(dir) {
   xy_joined <- xy_joined %>%
     dplyr::group_by(.data$subject_id, .data$trial_id) %>%
     dplyr::mutate(t_trial = .data$t - .data$t[1],
-                  t_zeroed = .data$t_trial - .data$point_of_disambig)
+                  t_zeroed = .data$t_trial - .data$point_of_disambiguation)
 
   # set sample rates
   SAMPLE_RATE = 40 # Hz
