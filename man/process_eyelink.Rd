@@ -7,7 +7,7 @@
 process_eyelink(dir)
 }
 \arguments{
-\item{dir}{Director with raw data}
+\item{dir}{Directory with raw data}
 }
 \description{
 Process eyelink raw data

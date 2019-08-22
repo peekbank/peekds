@@ -9,7 +9,7 @@ process_to_xy(format, dir)
 \arguments{
 \item{format}{One of "tobii", "smi", "eyelink"}
 
-\item{dir}{Director with raw data}
+\item{dir}{Directory with raw data}
 }
 \description{
 Process directory of raw data to xy data

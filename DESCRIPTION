@@ -1,15 +1,28 @@
 Package: peekds
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Provides data standard for peekbank
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: c(
+    person("Mika", "Braginsky", email = "mika.br@gmail.com", role = c("aut", "cre")),
+    person("Michael", "Frank", email = "mcfrank@stanford.edu", role = "aut"),
+    person("Linger", "Xu", email = "linger.xt@gmail.com", role = "aut")
+    )
+Description: Provides data standard for peekbank.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
 Imports:
   assertthat,
-  tidyverse
+  jsonlite,
+  dplyr,
+  readr,
+  stringr,
+  tsibble,
+  purrr,
+  magrittr,
+  rlang,
+  reader,
+  lubridate,
+  tidyr,
+  zoo

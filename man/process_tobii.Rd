@@ -4,10 +4,10 @@
 \alias{process_tobii}
 \title{Process tobii raw data}
 \usage{
-process_tobii(dir)
+process_tobii(dir_raw)
 }
 \arguments{
-\item{dir}{Director with raw data}
+\item{dir_raw}{Directory with raw data}
 }
 \description{
 Process tobii raw data

@@ -4,10 +4,12 @@
 \alias{process_smi}
 \title{Process smi raw data}
 \usage{
-process_smi(dir)
+process_smi(dir, file_ext = ".txt")
 }
 \arguments{
-\item{dir}{Director with raw data}
+\item{dir}{Directory with raw data}
+
+\item{file_ext}{}
 }
 \description{
 Process smi raw data
