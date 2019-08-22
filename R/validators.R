@@ -51,29 +51,6 @@ get_json_colnames <- function(table_type) {
   return(colnames_json)
 }
 
-#' Title
-#'
-#' @param dataset_type
-#'
-#' @return
-#' @export
-#'
-#' @examples
-list_check_tables <- function(dataset_type = "automated") {
-  # handcoded, automated
-  dstype_list <<- c("automated", "handcoded")
-
-  if (dataset_type == "automated") {
-    table_list <- c("subjects", "trials", "aoi_regions", "datasets", "xy_data", "aoi_data")
-  } else if (dataset_type == "handcoded") {
-    table_list <- c("subjects", "trials", "aoi_regions", "datasets")
-  } else {
-    stop("Invalid database type! The type can only be one of the following: ",
-         paste0(dstype_list, collapse = ", "), ".")
-  }
-  return(table_list)
-}
-
 #' Check if the table is EtDS compliant before saving as csv or importing into database
 #'
 #' @param df_table the data frame to be saved
@@ -125,7 +102,7 @@ validate_for_db_import <- function(dataset_type, dir_csv, file_ext = '.csv') {
   # get json file from github
   peekjson <- get_peekjson()
   # fetch the table list
-  table_list <- list_check_tables(dataset_type)
+  table_list <- list_ds_tables(dataset_type)
   # admin table is not required
   table_list <- table_list[table_list != "admin"];
   is_all_valid = TRUE

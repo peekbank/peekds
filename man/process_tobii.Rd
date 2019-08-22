@@ -4,7 +4,7 @@
 \alias{process_tobii}
 \title{Process tobii raw data}
 \usage{
-process_tobii(dir_raw)
+process_tobii(dataset_name = "sample_data", dataset_type = "automated")
 }
 \arguments{
 \item{dir_raw}{Directory with raw data}
