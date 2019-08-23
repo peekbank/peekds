@@ -33,7 +33,7 @@ list_ds_tables <- function(dataset_type = "automated") {
   if (dataset_type == "automated") {
     table_list <- c("subjects", "trials", "aoi_regions", "datasets", "xy_data", "aoi_data")
   } else if (dataset_type == "handcoded") {
-    table_list <- c("subjects", "trials", "aoi_regions", "datasets")
+    table_list <- c("subjects", "trials", "aoi_data", "datasets")
   } else {
     stop("Invalid database type! The type can only be one of the following: ",
          paste0(dstype_list, collapse = ", "), ".")
@@ -69,10 +69,9 @@ map_columns <- function(raw_data, raw_format, table_type) {
   df_map <- df_header[
     which((df_header$format == raw_format) & (df_header$table == table_type)), ]
   if (nrow(df_map) == 0) {
-    warning("User did not provide mapping columns between raw data and table ",
+    stop("User did not provide mapping columns between raw data and table ",
              table_type, " in 'import_scripts/import_header.csv'. Thus ",
              table_type, " table is not processed.\n")
-    return(NULL)
   }
   colnames_raw <- colnames(raw_data)
 
@@ -90,13 +89,13 @@ map_columns <- function(raw_data, raw_format, table_type) {
   for (i in 1:length(colnames_fetch)) {
     if (colnames_fetch[i] %in% colnames_raw) {
       df_table[i] = raw_data[colnames_fetch[i]]
-    } else if (is.empty(colnames_fetch[i])) {
-      warning("The raw data column to be mapped to ", colnames_map[i], " is not specified. ",
-              "Thus, this column will be populated with NA values.")
+    } else if (colnames_fetch[i] == "") {
+      stop("The raw data column to be mapped to ",
+              colnames_map[i], " is not specified.")
     }
       else {
-      warning("Cannot find column ", colnames_fetch[i], " in ",
-              raw_format, " raw data file. Thus, this column will be populated with NA values.")
+      stop("Cannot find column ", colnames_fetch[i], " in ",
+              raw_format, " raw data file.")
     }
   }
 
@@ -144,20 +143,46 @@ process_to_xy <- function(format, dir) {
   reader(dir)
 }
 
+#' Title
+#'
+#' @param table_type
+#'
+#' @return
+#' @export
+#'
+#' @examples
+create_emtpy_table <- function(table_type) {
+  # fetch the required columns from json file
+  colnames_json <- get_json_colnames(table_type)
+  # create emtpy df
+  df_table <- utils::read.csv(text = paste0(colnames_json, collapse = ","))
+  # add NA values
+  df_table[1,] = c(0, rep(NA, length(colnames_json)-1))
+  return(df_table)
+}
+
 
 #' Process tobii raw data
 #'
 #' @param dir_raw Directory with raw data
 #'
 #' @export
-process_tobii <- function(dataset_name = "sample_data", dataset_type = "automated") {
-  raw_format = "tobii"
+process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = "automated") {
+  raw_format <- "tobii"
+  # list all the files under the directory
+  file_raw <- list.files(path = dir_raw,
+                         pattern = '*data*.tsv',
+                         all.files = FALSE)
+
   # read in raw data frame from file oi
-  raw_data <- utils::read.table(file = dir_raw, sep = '\t', header = TRUE)
+  raw_data <- utils::read.table(file = file.path(dir_raw, file_raw),
+                                sep = '\t',
+                                header = TRUE)
 
   # Start processing table by table type
+  ######## DATASETS ########
   table_type <- "datasets"
-  if (is_required(table_type, dataset_type)) {
+  if (is_table_required(table_type, dataset_type)) {
     ## [monitor_size_x], [monitor_size_y]
     # get the unique monitor sizes
     monitor_size_str <- raw_data[["RecordingResolution"]] %>%
@@ -196,14 +221,64 @@ process_tobii <- function(dataset_name = "sample_data", dataset_type = "automate
     } # no else error message, because that will be handled by validator.R
   }
 
-  table_type <- "trials"
-  if (is_required(table_type, dataset_type)) {
-    # generate trials table
-    print("trials")
+  ######## AOI_REGIONS ########
+  table_type <- "aoi_regions"
+  if (is_table_required(table_type, dataset_type)) {
+    # find the roi region file under dir_raw
+    file_aoi <- list.files(path = dir_raw,
+                           pattern = '*aoi*',
+                           all.files = FALSE)
+
+    if (length(file_aoi) != 0) {
+      file_aoi <- file.path(dir_raw, file_aoi)
+      has_aoi_info <- file.exists(file_aoi)
+    } else {
+      has_aoi_info = FALSE
+    }
+    if (has_aoi_info) {
+      df_aoi <- utils::read.table(file_aoi, header = TRUE, sep = "")
+      aoi_id <- seq(0, (nrow(df_aoi)-1))
+      df_aoi[["aoi_region_id"]] <- c(aoi_id)
+    } else {
+      stop("Cannot find aoi_regions info file ", file_aoi, ".")
+    }
+
+    # validate against json, if valid, then save csv
+    if (validate_table(df_aoi, table_type)) {
+      save_table(df_aoi, table_type)
+    } # no else error message, because that will be handled by validator.R
   }
 
+  ######## TRIALS ########
+  table_type <- "trials"
+  if (is_table_required(table_type, dataset_type)) {
+    # find the trial file under dir_raw
+    file_trials <- list.files(path = dir_raw,
+                           pattern = '*trial*',
+                           all.files = FALSE)
+    if (length(file_trials) != 0) {
+      file_trials <- file.path(dir_raw, file_trials)
+      has_trial_info <- file.exists(file_trials)
+    } else {
+      has_trial_info = FALSE
+    }
+    if (has_trial_info) {
+      df_trials <- utils::read.table(file_trials, header = TRUE, sep = "")
+      trial_id <- seq(0, (nrow(df_trials)-1))
+      df_trials[["trial_id"]] <- c(trial_id)
+    } else {
+      stop("Cannot find trial_info file ", file_trials, ".")
+    }
+
+    # validate against json, if valid, then save csv
+    if (validate_table(df_trials, table_type)) {
+      save_table(df_trials, table_type)
+    } # no else error message, because that will be handled by validator.R
+  }
+
+  ######## SUBJECTS ########
   table_type <- "subjects"
-  if (is_required(table_type, dataset_type)) {
+  if (is_table_required(table_type, dataset_type)) {
     # fetch relavant columns from raw data file
     df_subjects <- map_columns(raw_data, raw_format, table_type)
 
@@ -218,12 +293,6 @@ process_tobii <- function(dataset_name = "sample_data", dataset_type = "automate
       save_table(df_subjects, table_type)
     } # no else error message, because that will be handled by validator.R
   }
-
-  if (is_required("trials", dataset_type)) {
-    get_json_colnames("trials")
-  }
-
-  save_table(df_procd = df_table, table_type = table)
 }
 
 
