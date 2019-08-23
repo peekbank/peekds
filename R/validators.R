@@ -48,6 +48,10 @@ get_json_colnames <- function(table_type) {
     peekjson[which(peekjson$table == table_type), "fields"] %>%
     purrr::flatten()
   colnames_json <- fields_json$field_name
+  # add "_id" to all the foreign key field names
+  # e.g. subject -> subject_id
+  mask_fkey <- fields_json$field_class == "ForeignKey"
+  colnames_json[mask_fkey] <- paste0(colnames_json[mask_fkey], "_id")
   return(colnames_json)
 }
 
