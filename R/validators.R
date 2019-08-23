@@ -81,7 +81,7 @@ validate_table <- function(df_table, table_type) {
   mask_valid <- colnames_json %in% colnames_table
   if (!all(mask_valid)) {
     stop("Cannot locate fields: ", paste0(colnames_json[!mask_valid], collapse = ", "),
-            " in the table. Please add them into the csv files.")
+            " in the table. Please add them into the ", table_type, "csv files.")
     return(FALSE)
   } else {
     return(TRUE)

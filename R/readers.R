@@ -125,6 +125,10 @@ save_table <- function(df_procd, table_type) {
     dir_procd, paste(table_type, ".csv", sep="")), row.names=FALSE)
 }
 
+# filter_eyetracking
+# average
+# universal function for converting orgin coordinates
+
 #' Process directory of raw data to xy data
 #'
 #' @param format One of "tobii", "smi", "eyelink"
@@ -133,6 +137,11 @@ save_table <- function(df_procd, table_type) {
 #' @export
 #'
 process_to_xy <- function(format, dir) {
+  # can be changed to process_smi_xy or for any dataset that needs to average
+  # xy data in order to xy_data table
+  # 1. average
+  # 2. filter out of range data
+
   readers <- list(
     "tobii" = process_tobii,
     "smi" = process_smi,
@@ -163,6 +172,7 @@ create_emtpy_table <- function(table_type) {
 
 
 #' Process tobii raw data
+#' dataset specific: datasets
 #'
 #' @param dir_raw Directory with raw data
 #'
@@ -291,6 +301,38 @@ process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = 
     # validate against json, if valid, then save csv
     if (validate_table(df_subjects, table_type)) {
       save_table(df_subjects, table_type)
+    } # no else error message, because that will be handled by validator.R
+  }
+
+  ######## XY_DATA ########
+  table_type <- "xy_data"
+  if (is_table_required(table_type, dataset_type)) {
+    # fetch relavant columns from raw data file
+    df_xy <- map_columns(raw_data, raw_format, table_type)
+
+    # replace 'subject_id', 'trial_id' to unique integer keys
+    xy_data_id <- seq(0, (nrow(df_xy)-1))
+    df_xy[["xy_data_id"]] <- c(xy_data_id)
+
+    # validate against json, if valid, then save csv
+    if (validate_table(df_xy, table_type)) {
+      save_table(df_xy, table_type)
+    } # no else error message, because that will be handled by validator.R
+  }
+
+  ######## AOI_DATA ########
+  table_type <- "aoi_data"
+  if (is_table_required(table_type, dataset_type)) {
+    # fetch relavant columns from raw data file
+    df_aoi <- map_columns(raw_data, raw_format, table_type)
+
+    # replace 'subject_id', 'trial_id' to unique integer keys
+    aoi_data_id <- seq(0, (nrow(df_aoi)-1))
+    df_aoi[["aoi_data_id"]] <- c(aoi_data_id)
+
+    # validate against json, if valid, then save csv
+    if (validate_table(df_aoi, table_type)) {
+      save_table(df_aoi, table_type)
     } # no else error message, because that will be handled by validator.R
   }
 }
