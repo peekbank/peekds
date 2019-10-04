@@ -2,16 +2,6 @@
 
 # Schema 
 
-|field_name |field_class  |
-|:----------|:------------|
-|admin_id   |IntegerField |
-|date       |DateField    |
-|version    |CharField    |
-> for (i in 1:length(table_names)) {
-+   print(knitr::kable(as.data.frame(tables[[i]][,1:2])))
-+ }
-
-
 |field_name  |field_class  |
 |:-----------|:------------|
 |aoi_data_id |IntegerField |
