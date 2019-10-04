@@ -16,3 +16,15 @@ na_mode <- function(x) {
 }
 
 
+#' Render the peekbank schema directly from github
+#'
+render_schema <- function(x) {
+  schema <- jsonlite::fromJSON("https://raw.githubusercontent.com/langcog/peekbank/master/static/peekbank-schema.json")
+
+  table_names <- schema[[2]]
+  tables <- schema[[3]]
+
+  for (i in 1:length(table_names)) {
+    print(knitr::kable(as.data.frame(tables[[i]][,1:2])))
+  }
+}
