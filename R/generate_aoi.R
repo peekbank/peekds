@@ -25,19 +25,13 @@ generate_aoi <- function(dir) {
     dplyr::mutate(t_trial = .data$t - .data$t[1],
                   t_zeroed = .data$t_trial - .data$point_of_disambiguation)
 
-  # set sample rates
-  SAMPLE_RATE = 40 # Hz
-  SAMPLE_DURATION = 1000/SAMPLE_RATE
-  MAX_GAP_LENGTH = .100 # S
-  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+  t_resampled <- downsample(xy_joined)
 
-  aoi <- dplyr::group_by(xy_joined, subject_id, trial_id) %>%
-    dplyr::mutate(t_zeroed = t_zeroed - (t_zeroed %% SAMPLE_DURATION)) %>% # zero out times, round down
-    dplyr::group_by(subject_id, trial_id, t_zeroed) %>%
-    dplyr::summarise(aoi = na_mode(aoi)) %>% # take the most common aoi for that rounded time
-    dplyr::rename(t = t_zeroed) %>%
+  aoi <- dplyr::group_by(t_resampled, subject_id, trial_id) %>%
+    dplyr::group_by(subject_id, trial_id, t) %>%
+    dplyr::summarise(aoi = na_mode(aoi), x = mean(x), y = mean(y)) %>% # take the most common aoi for that rounded time
     # if more than N NAs, keep them. if not, set to last
-    select(subject_id, trial_id, t, aoi) %>%
+    select(subject_id, trial_id, t, aoi, x, y) %>%
     ungroup() %>%
     tidyr::complete(t) %>%
     dplyr::group_by(subject_id, trial_id) %>%
@@ -82,13 +76,12 @@ downsample <- function(xy_joined) {
   SAMPLE_RATE = 40 # Hz
   SAMPLE_DURATION = 1000/SAMPLE_RATE
   MAX_GAP_LENGTH = .100 # S
-  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+  MAX_GAP_SAMPLES <<- MAX_GAP_LENGTH / (1/SAMPLE_RATE)
 
   # zero out times, round down
   t_resampled <- dplyr::group_by(xy_joined, subject_id, trial_id) %>%
     dplyr::mutate(t_zeroed = t_zeroed - (t_zeroed %% SAMPLE_DURATION))  %>%
-    dplyr::mutate(t = t_zeroed) %>%
-    dplyr::select(subject_id, trial_id, t)
+    dplyr::mutate(t = t_zeroed)
 
   return(t_resampled)
 }
