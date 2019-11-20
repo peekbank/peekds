@@ -31,35 +31,21 @@ generate_aoi <- function(dir) {
   MAX_GAP_LENGTH = .100 # S
   MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
 
-  # resample and interpolate
-  aoi <- xy_joined %>%
-    dplyr::group_by(.data$subject_id, .data$trial_id) %>%
-    tidyr::nest() %>%
-    dplyr::mutate(
-      data = .data$data %>%
-        purrr::map(function(df) {
-          df_rounded <- df %>%
-            dplyr::select(t_zeroed, aoi) %>%
-            dplyr::mutate(t_zeroed = round(SAMPLE_DURATION * round(t_zeroed/SAMPLE_DURATION)))
+  aoi <- dplyr::group_by(xy_joined, subject_id, trial_id) %>%
+    dplyr::mutate(t_zeroed = t_zeroed - (t_zeroed %% SAMPLE_DURATION)) %>% # zero out times, round down
+    dplyr::group_by(subject_id, trial_id, t_zeroed) %>%
+    dplyr::summarise(aoi = na_mode(aoi)) %>% # take the most common aoi for that rounded time
+    dplyr::rename(t = t_zeroed) %>%
+    # if more than N NAs, keep them. if not, set to last
+    select(subject_id, trial_id, t, aoi) %>%
+    ungroup() %>%
+    tidyr::complete(t) %>%
+    dplyr::group_by(subject_id, trial_id) %>%
+    dplyr::mutate(aoi = zoo::na.locf(aoi,
+                                     maxgap = MAX_GAP_SAMPLES,
+                                     na.rm=FALSE),
+                  aoi_data_id = 0:(n() - 1))
 
-          t_resampled <- tibble::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
-                                                             max(df_rounded$t_zeroed),
-                                                             SAMPLE_DURATION)))
-
-
-          dplyr::left_join(t_resampled, df_rounded) %>%
-            # fuzzyjoin::difference_left_join(select(df,
-            #                                        t_zeroed, aoi),
-            #                                 max_dist = round(1000/SAMPLE_RATE)/2) %>%
-            dplyr::group_by(t_zeroed) %>%
-            dplyr::summarise(aoi = na_mode(aoi)) %>%
-            dplyr::rename(t = t_zeroed) %>%
-            dplyr::mutate(aoi = zoo::na.locf(aoi,
-                                             maxgap = MAX_GAP_SAMPLES,
-                                             na.rm=FALSE)) # last observation carried forward
-          })) %>%
-    tidyr::unnest(.data$data) %>%
-    mutate(aoi_data_id = 0:(n() - 1))
 
   readr::write_csv(aoi, file.path(dir, "aoi_data.csv"))
 }
@@ -84,4 +70,25 @@ add_aois <- function(xy_joined) {
       ))
 
   return(xy_joined)
+}
+
+#' Generate aoi data from xy data
+#'
+#' @param xy_joined
+#'
+#' @export
+downsample <- function(xy_joined) {
+  # set sample rates
+  SAMPLE_RATE = 40 # Hz
+  SAMPLE_DURATION = 1000/SAMPLE_RATE
+  MAX_GAP_LENGTH = .100 # S
+  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+
+  # zero out times, round down
+  t_resampled <- dplyr::group_by(xy_joined, subject_id, trial_id) %>%
+    dplyr::mutate(t_zeroed = t_zeroed - (t_zeroed %% SAMPLE_DURATION))  %>%
+    dplyr::mutate(t = t_zeroed) %>%
+    dplyr::select(subject_id, trial_id, t)
+
+  return(t_resampled)
 }
