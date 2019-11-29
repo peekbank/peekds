@@ -1,11 +1,51 @@
+#' Resample times to be consistent across labs
+#'
+#' @param dir df that has subject_id, dataset_id, trial_id and times
+#'
+#' @exportrecentered =  xy_joined %>%
+resample_times <- function(df) {
+  # set sample rates
+  SAMPLE_RATE = 40 # Hz
+  SAMPLE_DURATION = 1000/SAMPLE_RATE
+  MAX_GAP_LENGTH = .100 # S
+  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+  
+  # center timestamp (0 POD)
+  df <- df %>%
+    dplyr::group_by(.data$subject_id, .data$trial_id, .data$dataset_id) %>%
+    dplyr::mutate(t_trial = .data$t - .data$t[1],
+                  t_zeroed = .data$t_trial - .data$point_of_disambiguation)
+  
+  df %>% dplyr::group_by(.data$subject_id, .data$trial_id) %>%
+  tidyr::nest() %>%
+  dplyr::mutate(
+    data = .data$data %>%
+      purrr::map(function(df) {
+        df_rounded <- df %>%
+          dplyr::mutate(t_zeroed = round(SAMPLE_DURATION * round(t_zeroed/SAMPLE_DURATION)))
+        
+        t_resampled <- tibble::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
+                                                           max(df_rounded$t_zeroed),
+                                                           SAMPLE_DURATION)))
+        
+        dplyr::left_join(t_resampled, df_rounded) %>%
+          dplyr::group_by(t_zeroed)
+      })) %>%
+  tidyr::unnest(.data$data) 
+}
+
+
 #' Generate aoi data from xy data
 #'
 #' @param dir Directory with xy data and metadata
 #'
 #' @export
 generate_aoi <- function(dir) {
-  # validate_for_aoi_conversion(dir)
-
+  SAMPLE_RATE = 40 # Hz
+  SAMPLE_DURATION = 1000/SAMPLE_RATE
+  MAX_GAP_LENGTH = .100 # S
+  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+  
   # read in xy_data, trials, aoa_coordinates
   xy <- readr::read_csv(file.path(dir, "xy_data.csv"))
   trials <- readr::read_csv(file.path(dir, "trials.csv"))
@@ -19,49 +59,18 @@ generate_aoi <- function(dir) {
   # find correct aoi based on trials
   xy_joined <- add_aois(xy_joined)
 
-  # center timestamp (0 POD)
-  xy_joined <- xy_joined %>%
-    dplyr::group_by(.data$subject_id, .data$trial_id) %>%
-    dplyr::mutate(t_trial = .data$t - .data$t[1],
-                  t_zeroed = .data$t_trial - .data$point_of_disambiguation)
-
-  # set sample rates
-  SAMPLE_RATE = 40 # Hz
-  SAMPLE_DURATION = 1000/SAMPLE_RATE
-  MAX_GAP_LENGTH = .100 # S
-  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
-
-  # resample and interpolate
-  aoi <- xy_joined %>%
-    dplyr::group_by(.data$subject_id, .data$trial_id) %>%
-    tidyr::nest() %>%
-    dplyr::mutate(
-      data = .data$data %>%
-        purrr::map(function(df) {
-          df_rounded <- df %>%
-            dplyr::select(t_zeroed, aoi) %>%
-            dplyr::mutate(t_zeroed = round(SAMPLE_DURATION * round(t_zeroed/SAMPLE_DURATION)))
-
-          t_resampled <- tibble::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
-                                                             max(df_rounded$t_zeroed),
-                                                             SAMPLE_DURATION)))
-
-
-          dplyr::left_join(t_resampled, df_rounded) %>%
-            # fuzzyjoin::difference_left_join(select(df,
-            #                                        t_zeroed, aoi),
-            #                                 max_dist = round(1000/SAMPLE_RATE)/2) %>%
-            dplyr::group_by(t_zeroed) %>%
-            dplyr::summarise(aoi = na_mode(aoi)) %>%
-            dplyr::rename(t = t_zeroed) %>%
-            dplyr::mutate(aoi = zoo::na.locf(aoi,
-                                             maxgap = MAX_GAP_SAMPLES,
-                                             na.rm=FALSE)) # last observation carried forward
-          })) %>%
-    tidyr::unnest(.data$data) %>%
-    mutate(aoi_data_id = 0:(n() - 1))
-
-  readr::write_csv(aoi, file.path(dir, "aoi_data.csv"))
+  aoi = resample_times(xy_joined) %>%
+    dplyr::select(dataset_id, subject_id, trial_id, t_zeroed, aoi) %>%
+    dplyr::rename(t = t_zeroed) %>%
+    dplyr::group_by(dataset_id, subject_id, trial_id, t) %>%
+    dplyr::summarise(aoi = na_mode(aoi)) %>% 
+    dplyr::ungroup() %>%
+    group_by(dataset_id, subject_id, trial_id) %>%
+    dplyr::mutate(aoi = zoo::na.locf(aoi,
+                                     maxgap = MAX_GAP_SAMPLES,
+                                     na.rm=FALSE)) %>%  # last observation carried forward
+    ungroup() %>%
+    dplyr::mutate(aoi_data_id = 0:(n() - 1)) 
 }
 
 #' Add AOIs
