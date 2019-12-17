@@ -1,6 +1,6 @@
 #' This function trims the xy_data such that only gaze coordinates that fall within the stimuli space is preserved
-#' To make this work, a line of code will need to be added to each import script after center_time_on_pod():
-#' %>% xy_trim(datasets)
+#'
+#'
 #' @param xy_data the pre-trim xy data generated from the import script
 #' @param datasets the peekDS formatted datasets.csv that contains screen dimension info
 #' @export
