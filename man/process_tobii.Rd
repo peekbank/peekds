@@ -2,7 +2,8 @@
 % Please edit documentation in R/readers.R
 \name{process_tobii}
 \alias{process_tobii}
-\title{Process tobii raw data}
+\title{Process tobii raw data
+dataset specific: datasets}
 \usage{
 process_tobii(dir_raw, dataset_name = "sample_data",
   dataset_type = "automated")
@@ -12,4 +13,5 @@ process_tobii(dir_raw, dataset_name = "sample_data",
 }
 \description{
 Process tobii raw data
+dataset specific: datasets
 }
