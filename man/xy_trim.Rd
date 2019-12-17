@@ -2,9 +2,7 @@
 % Please edit documentation in R/xy_trim.R
 \name{xy_trim}
 \alias{xy_trim}
-\title{This function trims the xy_data such that only gaze coordinates that fall within the stimuli space is preserved
-To make this work, a line of code will need to be added to each import script after center_time_on_pod():
-%>% xy_trim(datasets)}
+\title{This function trims the xy_data such that only gaze coordinates that fall within the stimuli space is preserved}
 \usage{
 xy_trim(xy_data, datasets)
 }
@@ -15,6 +13,4 @@ xy_trim(xy_data, datasets)
 }
 \description{
 This function trims the xy_data such that only gaze coordinates that fall within the stimuli space is preserved
-To make this work, a line of code will need to be added to each import script after center_time_on_pod():
-%>% xy_trim(datasets)
 }
