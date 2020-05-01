@@ -2,7 +2,7 @@
 #'
 #' @param dir df that has subject_id, dataset_id, trial_id and times
 #'
-#' @exportrecentered =  xy_joined %>%
+#' @export
 resample_times <- function(df) {
   # set sample rates
   SAMPLE_RATE = 40 # Hz
