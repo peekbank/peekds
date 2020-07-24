@@ -9,6 +9,9 @@ is_table_required(table_type, dataset_type = "automated")
 \arguments{
 \item{dataset_type}{}
 }
+\value{
+
+}
 \description{
 Title
 }

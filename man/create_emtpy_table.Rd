@@ -9,6 +9,9 @@ create_emtpy_table(table_type)
 \arguments{
 \item{table_type}{}
 }
+\value{
+
+}
 \description{
 Title
 }
