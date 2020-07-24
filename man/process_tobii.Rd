@@ -5,8 +5,11 @@
 \title{Process tobii raw data
 dataset specific: datasets}
 \usage{
-process_tobii(dir_raw, dataset_name = "sample_data",
-  dataset_type = "automated")
+process_tobii(
+  dir_raw,
+  dataset_name = "sample_data",
+  dataset_type = "automated"
+)
 }
 \arguments{
 \item{dir_raw}{Directory with raw data}

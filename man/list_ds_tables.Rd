@@ -9,6 +9,9 @@ list_ds_tables(dataset_type = "automated")
 \arguments{
 \item{dataset_type}{}
 }
+\value{
+
+}
 \description{
 List the tables required for different datasets
 }
