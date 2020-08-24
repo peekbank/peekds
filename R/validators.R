@@ -18,6 +18,9 @@ get_peekjson <- function() {
   return(peekjson)
 }
 
+prettyprint_json <- function(table_type = "all") {
+}
+
 #' Fetching the list of column names in each table according to the json file
 #'
 #' @param table_type the type of table, can be one of this six types:
@@ -48,30 +51,11 @@ get_json_colnames <- function(table_type) {
     peekjson[which(peekjson$table == table_type), "fields"] %>%
     purrr::flatten()
   colnames_json <- fields_json$field_name
+  # add "_id" to all the foreign key field names
+  # e.g. subject -> subject_id
+  # mask_fkey <- fields_json$field_class == "ForeignKey"
+  # colnames_json[mask_fkey] <- paste0(colnames_json[mask _fkey], "_id")
   return(colnames_json)
-}
-
-#' Title
-#'
-#' @param dataset_type
-#'
-#' @return
-#' @export
-#'
-#' @examples
-list_check_tables <- function(dataset_type = "automated") {
-  # handcoded, automated
-  dstype_list <<- c("automated", "handcoded")
-
-  if (dataset_type == "automated") {
-    table_list <- c("subjects", "trials", "aoi_regions", "datasets", "xy_data", "aoi_data")
-  } else if (dataset_type == "handcoded") {
-    table_list <- c("subjects", "trials", "aoi_regions", "datasets")
-  } else {
-    stop("Invalid database type! The type can only be one of the following: ",
-         paste0(dstype_list, collapse = ", "), ".")
-  }
-  return(table_list)
 }
 
 #' Check if the table is EtDS compliant before saving as csv or importing into database
@@ -100,7 +84,7 @@ validate_table <- function(df_table, table_type) {
   mask_valid <- colnames_json %in% colnames_table
   if (!all(mask_valid)) {
     stop("Cannot locate fields: ", paste0(colnames_json[!mask_valid], collapse = ", "),
-            " in the table. Please add them into the csv files.")
+            " in the table. Please add them into the ", table_type, "csv files.")
     return(FALSE)
   } else {
     return(TRUE)
@@ -125,7 +109,7 @@ validate_for_db_import <- function(dataset_type, dir_csv, file_ext = '.csv') {
   # get json file from github
   peekjson <- get_peekjson()
   # fetch the table list
-  table_list <- list_check_tables(dataset_type)
+  table_list <- list_ds_tables(dataset_type)
   # admin table is not required
   table_list <- table_list[table_list != "admin"];
   is_all_valid = TRUE
