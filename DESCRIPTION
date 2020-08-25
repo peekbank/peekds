@@ -16,6 +16,7 @@ Imports:
   assertthat,
   jsonlite,
   dplyr,
+  osfr,
   readr,
   stringr,
   tsibble,

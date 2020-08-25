@@ -1,73 +1,9 @@
-# peekds
+## Datawiz/ iCoder sample data info
 
-# Schema 
+Sample output from iCoder files processed through DataWiz
 
-|field_name  |field_class  |
-|:-----------|:------------|
-|aoi_data_id |IntegerField |
-|aoi         |CharField    |
-|subject     |ForeignKey   |
-|t           |IntegerField |
-|trial       |ForeignKey   |
+### Source
 
+Pomper, R., & Saffran, J. R. (2016). Roses are red, socks are blue: Switching dimensions disrupts young children’s language processing. PLoS ONE 11(6): e0158459. doi:10.1371/journal.
 
-|field_name    |field_class  |
-|:-------------|:------------|
-|aoi_region_id |IntegerField |
-|l_x_max       |IntegerField |
-|l_x_min       |IntegerField |
-|l_y_max       |IntegerField |
-|l_y_min       |IntegerField |
-|r_x_max       |IntegerField |
-|r_x_min       |IntegerField |
-|r_y_max       |IntegerField |
-|r_y_min       |IntegerField |
-
-
-|field_name     |field_class  |
-|:--------------|:------------|
-|dataset_id     |IntegerField |
-|monitor_size_x |IntegerField |
-|monitor_size_y |IntegerField |
-|sample_rate    |IntegerField |
-|tracker        |IntegerField |
-|lab_dataset_id |CharField    |
-
-
-|field_name     |field_class  |
-|:--------------|:------------|
-|subject_id     |IntegerField |
-|age            |IntegerField |
-|sex            |CharField    |
-|lab_subject_id |CharField    |
-
-
-|field_name              |field_class  |
-|:-----------------------|:------------|
-|trial_id                |IntegerField |
-|aoi_region              |IntegerField |
-|dataset                 |ForeignKey   |
-|lab_trial_id            |CharField    |
-|distractor_image        |CharField    |
-|distractor_label        |CharField    |
-|full_phrase             |IntegerField |
-|point_of_disambiguation |IntegerField |
-|target_image            |CharField    |
-|target_label            |CharField    |
-|target_side             |CharField    |
-
-
-|field_name |field_class  |
-|:----------|:------------|
-|xy_data_id |IntegerField |
-|subject    |ForeignKey   |
-|trial      |ForeignKey   |
-|x          |IntegerField |
-|y          |IntegerField |
-
-
-|field_name |field_class  |
-|:----------|:------------|
-|admin_id   |IntegerField |
-|date       |DateField    |
-|version    |CharField    |
+Direct link to processed data: https://journals.plos.org/plosone/article/file?type=supplementary&id=info:doi/10.1371/journal.pone.0158459.s001
