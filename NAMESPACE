@@ -3,7 +3,7 @@
 export(add_aois)
 export(create_emtpy_table)
 export(generate_aoi)
-export(get_json_colnames)
+export(get_json_fields)
 export(get_peekjson)
 export(get_raw_data)
 export(is_table_required)
