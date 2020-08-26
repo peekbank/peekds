@@ -44,7 +44,7 @@ get_raw_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
     osfr::osf_ls_files() %>%
     dplyr::filter(name == "raw_data") %>%
     osfr::osf_ls_files() %>%
-    osf_download(path = path,
+    osfr::osf_download(path = path,
                  conflicts = "overwrite", verbose = TRUE, progress = TRUE)
 }
 
