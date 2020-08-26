@@ -35,6 +35,7 @@ render_schema <- function(x) {
 #' @param lab_dataset_id Specific ID occurring in the file hierarchy of the relevant OSF repo.
 #' @param path Where you want it on your own machine. Will error if directory doesn't exist.
 #' @param osf_address pr6wu for peekbank.
+#' @export
 get_raw_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
 
     # get file list in the relevant raw data directory and download
@@ -53,6 +54,7 @@ get_raw_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
 #' @param lab_dataset_id Specific ID occurring in the file hierarchy of the relevant OSF repo.
 #' @param path Where the data live on your own machine.
 #' @param osf_address pr6wu for peekbank.
+#' @export
 put_processed_data <- function(token, lab_dataset_id, path = ".",
                                osf_address = "pr6wu") {
   osf_auth(token = token)
