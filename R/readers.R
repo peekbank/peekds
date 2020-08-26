@@ -31,9 +31,9 @@ list_ds_tables <- function(dataset_type = "automated") {
   dstype_list <<- c("automated", "handcoded")
 
   if (dataset_type == "automated") {
-    table_list <- c("subjects", "trials", "aoi_regions", "datasets", "xy_data", "aoi_data")
+    table_list <- c("subjects", "administrations", "trials", "datasets", "xy_timepoints", "aoi_timepoints", "aoi_region_sets", "stimuli")
   } else if (dataset_type == "handcoded") {
-    table_list <- c("subjects", "trials", "aoi_data", "datasets")
+    table_list <- c("subjects", "administrations", "trials", "datasets","aoi_timepoints", "stimuli")
   } else {
     stop("Invalid database type! The type can only be one of the following: ",
          paste0(dstype_list, collapse = ", "), ".")
