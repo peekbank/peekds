@@ -46,6 +46,7 @@ resample_times <- function(df) {
 #' @param dir Directory with xy data and metadata
 #'
 #' @export
+#' @return
 generate_aoi <- function(dir) {
   SAMPLE_RATE = 40 # Hz
   SAMPLE_DURATION = 1000/SAMPLE_RATE
@@ -65,7 +66,7 @@ generate_aoi <- function(dir) {
   # find correct aoi based on trials
   xy_joined <- add_aois(xy_joined)
 
-  aoi = resample_times(xy_joined) %>%
+  resample_times(xy_joined) %>%
     dplyr::select(dataset_id, administration_id, trial_id, t_zeroed, aoi) %>%
     dplyr::rename(t_norm = t_zeroed) %>%
     dplyr::group_by(dataset_id, administration_id, trial_id, t_norm) %>%

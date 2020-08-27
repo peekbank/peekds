@@ -9,6 +9,9 @@ generate_aoi(dir)
 \arguments{
 \item{dir}{Directory with xy data and metadata}
 }
+\value{
+
+}
 \description{
 Generate aoi data from xy data
 }
