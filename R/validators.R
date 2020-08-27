@@ -5,7 +5,11 @@ validate_for_aoi_conversion <- function(dir) {
   # require
   rm(list = ls())
   library(peekds)
-
+  library(dplyr)
+  dir_csv = "./processed_data"
+  file_ext = '.csv'
+  setwd("C:/Dropbox/_codes/peek/peekds/")
+  msg_error_all <- validate_for_db_import(dir_csv = "./processed_data")
 }
 
 #' parse json file from peekbank github into a dataframe
@@ -51,14 +55,59 @@ get_json_fields <- function(table_type) {
 
   # get the list of column names in json
   fields_json <-
-    peekjson[which(peekjson$table == table_type), "fields"] %>%
-    purrr::flatten()
+    peekjson[which(peekjson$table == table_type), "fields"]
+  fields_json <- fields_json[[1]]
 
   # add "_id" to all the foreign key field names
   # e.g. subject -> subject_id
   # mask_fkey <- fields_json$field_class == "ForeignKey"
   # colnames_json[mask_fkey] <- paste0(colnames_json[mask _fkey], "_id")
   return(fields_json)
+}
+
+
+#' check the peekbank_column_info csv files against database schema
+#'
+#' @param path_csv the directory of csv file 'peekbank_column_info.csv'
+#' @param file_ext the default is ".csv"
+#'
+#' @return TRUE only if all the csv files have valid columns
+#'
+#' @examples
+#' \dontrun{
+#' is_valid = validate_column_info(path_csv = '.')
+#' }
+#'
+#' @export
+validate_column_info <- function(path_csv) {
+  # get json file from github
+  peekjson <- get_peekjson()
+  # fetch the table list
+  table_list <- list_ds_tables()
+  # admin table is not required
+  table_list <- table_list[table_list != "admin"];
+  # read in the csv columns info file
+  file_name <- "peekbank_column_info.csv"
+  file_csv = file.path(path_csv, file_name)
+
+  if (file.exists(file_csv)) {
+    # read in csv file and check if the data is valid
+    info_csv <- utils::read.csv(file_csv)
+  } else {
+    is_all_valid = FALSE
+    stop("Cannot find file: ", file_csv)
+  }
+
+  is_all_valid = TRUE
+
+  for (table_type in table_list) {
+    fields_json <- get_json_fields(table_type)
+    rows_sel <- column_info[column_info$table == table_type, ]
+
+    fieldnames_json <- fields_json$field_name
+    fieldnames_csv <- rows_sel[, 'field_name']
+  }
+  return(is_all_valid)
 }
 
 #' Check if a dataframe/table is EtDS compliant before saving as csv or importing into database
@@ -76,71 +125,64 @@ get_json_fields <- function(table_type) {
 #'
 #' @export
 validate_table <- function(df_table, table_type) {
+  msg_error <- c()
   colnames_table <- colnames(df_table)
 
-  fieldnames_json <- fields_json$field_name
-  fieldclasses_json <- fields_json$field_class
-  fieldoptions_json <- fields_json$options
+  fields_json <- get_json_fields(table_type = table_type)
 
-  colnames_json <- get_json_fields(table_type = table_type)
+  # start checking field/column one by one
+  for (idx in 1:length(fields_json)) {
+    fieldname <- fields_json$field_name[idx]
+    fieldclass <- fields_json$field_class[idx]
+    fieldoptions <- fields_json$options[idx, ]
 
-  if (is.null(colnames_json)) {
-    return(FALSE)
+    idx_tb <- match(fieldname, colnames_table)
+    is_required <- fieldoptions$primary_key | !fieldoptions$null
+
+    # step 1: check if this is a required field
+    if (is_required & is.na(idx_tb)) {
+      msg_new <- paste("\n\t-\tCannot locate required field: ", fieldname,
+           ". Please add the column into the ", table_type, "processed data file.")
+      msg_error <- c(msg_error, msg_new)
+      next()
+    }
+
+    # step 2: check if values are in the required type/format
+    content_tb <- df_table[, fieldname]
+    if (fieldclass == "IntegerField") {
+      is_type_valid <- is.integer(content_tb)
+      if (!is_type_valid) {
+        msg_new <- paste("\n\t-\t ", fieldname, " should contain integers only.")
+        msg_error <- c(msg_error, msg_new)
+      }
+    } else if (fieldclass == "CharField") {
+      # numbers are allowed here as well since numbers can be converted into chars
+      is_type_valid <- is.character(content_tb) | (typeof(content_tb) == "integer")
+      if (!is_type_valid) {
+        msg_new <- paste("\n\t-\tField ", fieldname, " should contain characters only.")
+        msg_error <- c(msg_error, msg_new)
+      }
+    } else {
+      # no required data type
+      is_type_valid <- TRUE
+    }
+
+    # step 3: if word/label choices are required, check if the values are valid
+    if ("choices" %in% colnames(fieldoptions)) {
+      choices_json <- unique(purrr::flatten(fieldoptions$choices))
+
+      if (is_type_valid & length(choices_json) > 0) {
+        is_value_valid <- all(unique(content_tb) %in% choices_json)
+        if (!is_value_valid) {
+          msg_new <- paste("\n\t-\tField ", fieldname, " should contain the following values only: ",
+                           paste(unlist(choices_json), collapse=', '), ".")
+          msg_error <- c(msg_error, msg_new)
+        }
+      }
+    }
   }
 
-  # check if all
-  mask_valid <- colnames_json %in% colnames_table
-  if (!all(mask_valid)) {
-    stop("Cannot locate fields: ", paste0(colnames_json[!mask_valid], collapse = ", "),
-            " in the table. Please add them into the ", table_type, "csv files.")
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
-#' check the peekbank_column_info csv files against database schema
-#'
-#' @param path_csv the directory of csv file 'peekbank_column_info.csv'
-#' @param file_ext the default is ".csv"
-#'
-#' @return TRUE only if all the csv files have valid columns
-#'
-#' @examples
-#' \dontrun{
-#' is_valid = validate_column_info(dir_csv = '.')
-#' }
-#'
-#' @export
-validate_column_info <- function(path_csv) {
-  # get json file from github
-  peekjson <- get_peekjson()
-  # fetch the table list
-  table_list <- list_ds_tables()
-  # admin table is not required
-  table_list <- table_list[table_list != "admin"];
-  # read in the csv columns info file
-  file_name <- "peekbank_column_info.csv"
-  file_csv = file.path(dir_csv, file_name)
-
-  if (file.exists(file_csv)) {
-    # read in csv file and check if the data is valid
-    column_info <- utils::read.csv(file_csv)
-  } else {
-  is_all_valid = FALSE
-  stop("Cannot find file: ", file_csv)
-}
-
-  is_all_valid = TRUE
-
-  for (table_type in table_list) {
-    fields_json <- get_json_fields(table_type)
-    rows_sel <- column_info[column_info$table == table_type, ]
-
-    fieldnames_json <- fields_json$field_name
-    fieldnames_csv <- rows_sel[, 'field_name']
-  }
-  return(is_all_valid)
+  return(msg_error)
 }
 
 #' check all csv files against database schema for database import
@@ -153,34 +195,33 @@ validate_column_info <- function(path_csv) {
 #'
 #' @examples
 #' \dontrun{
-#' is_valid = validate_for_db_import(dir_csv = "smi_dataset/processed_data")
+#' msg_error_all <- validate_for_db_import(dir_csv = "./processed_data")
 #' }
 #'
 #' @export
-validate_for_db_import <- function(dataset_type, dir_csv, file_ext = '.csv') {
+validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
   # get json file from github
   peekjson <- get_peekjson()
   # fetch the table list
-  table_list <- list_ds_tables(dataset_type)
+  table_list <- list_ds_tables()
   # admin table is not required
-  table_list <- table_list[table_list != "admin"];
-  is_all_valid = TRUE
+  # table_list <- table_list[table_list != "admin"];
+  msg_error_all <- c()
 
   for (table_type in table_list) {
     file_csv = file.path(dir_csv, paste0(table_type, file_ext))
     if (file.exists(file_csv)) {
       # read in csv file and check if the data is valid
       df_table <- utils::read.csv(file_csv)
-      is_valid <- validate_table(df_table, table_type)
-      if (!is_valid) {
-        is_all_valid = FALSE
-        stop("The csv file '", table_type,
-                "' does not have the right format for database import.")
+      msg_error <- validate_table(df_table, table_type)
+      if (!is.null(msg_error)) {
+        warning("The processed data file '", table_type,
+                "' failed to pass the validator for database import with these error messsages:", msg_error)
+        msg_error_all <- c(msg_error_all, msg_error)
       }
     } else {
-      is_all_valid = FALSE
-      stop("Cannot find file: ", file_csv)
+      warning("Cannot find required file: ", file_csv)
     }
   }
-  return(is_all_valid)
+  return(msg_error_all)
 }
