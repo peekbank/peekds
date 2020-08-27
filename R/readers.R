@@ -3,14 +3,11 @@
 #' @importFrom rlang .data
 NULL
 
-#' Get coding method
-#'
-#' @param table_type character
-#' @param dataset_type character
+#' Get coding method list from json file
 #'
 #' @return
 #' @export
-get_coding_method <- function() {
+list_coding_methods <- function() {
   fields_json <- get_json_fields(table_type = "administrations")
   methods_json <- fields_json$options[fields_json$field_name == "coding_method", "choices"] %>%
     purrr::flatten() %>%
@@ -24,9 +21,15 @@ get_coding_method <- function() {
 #' @param dataset_type character
 #'
 #' @return
+#'
+#' @examples
+#' \dontrun{
+#' is_required <- is_table_required(table_type = "xy_timepoints", coding_method = "manual gaze coding")
+#' }
+#'
 #' @export
-is_table_required <- function(table_type, dataset_type = "auto") {
-  table_list <- list_ds_tables(dataset_type)
+is_table_required <- function(table_type, coding_method) {
+  table_list <- list_ds_tables(coding_method)
   is_required <- table_type %in% table_list
   return(is_required)
 }
@@ -39,16 +42,16 @@ is_table_required <- function(table_type, dataset_type = "auto") {
 #' @export
 list_ds_tables <- function(coding_method = "eyetracking") {
   # handcoded, automated
-  dstype_list <- get_coding_method()
+  methods_json <- list_coding_methods()
   # fetching json choices for the "coding_method"
 
   if (coding_method == "eyetracking" | coding_method == "automated gaze coding") {
     table_list <- c("subjects", "administrations", "trials", "datasets", "xy_timepoints", "aoi_timepoints", "aoi_region_sets", "stimuli")
-  } else if (coding_method == "manual") {
+  } else if (coding_method == "manual gaze coding") {
     table_list <- c("subjects", "administrations", "trials", "datasets","aoi_timepoints", "stimuli")
   } else {
     stop("Invalid coding method type! The type can only be one of the following: ",
-         paste0(dstype_list, collapse = ", "), ".")
+         paste0(methods_json, collapse = ", "), ".")
   }
   return(table_list)
 }
