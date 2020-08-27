@@ -1,15 +1,15 @@
 #' @importFrom dplyr "%>%"
 
-validate_for_aoi_conversion <- function(dir) {
+demo_validator <- function() {
   # check for xy_data, trials, aoa_coordinates
   # require
   rm(list = ls())
   library(peekds)
   library(dplyr)
-  dir_csv = "./processed_data"
-  file_ext = '.csv'
+  #dir_csv = "./processed_data"
+  #file_ext = '.csv'
   setwd("C:/Dropbox/_codes/peek/peekds/")
-  msg_error_all <- validate_for_db_import(dir_csv = "./processed_data")
+  msg_error_all <- validate_for_db_import(dir_csv = "./testdataset/pomper_saffran2016/processed_data")
 }
 
 #' parse json file from peekbank github into a dataframe
@@ -218,6 +218,8 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
         warning("The processed data file '", table_type,
                 "' failed to pass the validator for database import with these error messsages:", msg_error)
         msg_error_all <- c(msg_error_all, msg_error)
+      } else {
+        print(paste("The processed data file ", table_type, "passed the validator!"))
       }
     } else {
       warning("Cannot find required file: ", file_csv)
