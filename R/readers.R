@@ -12,7 +12,24 @@ NULL
 #' @export
 #'
 #' @examples
-is_table_required <- function(table_type, dataset_type = "automated") {
+get_coding_method <- function() {
+  fields_json <- get_json_fields(table_type = "administrations")
+  methods_json <- fields_json$options[fields_json$field_name == "coding_method", "choices"] %>%
+    purrr::flatten() %>%
+    unique()
+  return(methods_json)
+}
+
+#' Title
+#'
+#' @param table_type
+#' @param dataset_type
+#'
+#' @return
+#' @export
+#'
+#' @examples
+is_table_required <- function(table_type, dataset_type = "auto") {
   table_list <- list_ds_tables(dataset_type)
   is_required <- table_type %in% table_list
   return(is_required)
@@ -26,16 +43,17 @@ is_table_required <- function(table_type, dataset_type = "automated") {
 #' @export
 #'
 #' @examples
-list_ds_tables <- function(dataset_type = "automated") {
+list_ds_tables <- function(coding_method = "eyetracking") {
   # handcoded, automated
-  dstype_list <<- c("automated", "handcoded")
+  dstype_list <- get_coding_method()
+  # fetching json choices for the "coding_method"
 
-  if (dataset_type == "automated") {
+  if (coding_method == "eyetracking" | coding_method == "automated gaze coding") {
     table_list <- c("subjects", "administrations", "trials", "datasets", "xy_timepoints", "aoi_timepoints", "aoi_region_sets", "stimuli")
-  } else if (dataset_type == "handcoded") {
+  } else if (coding_method == "manual") {
     table_list <- c("subjects", "administrations", "trials", "datasets","aoi_timepoints", "stimuli")
   } else {
-    stop("Invalid database type! The type can only be one of the following: ",
+    stop("Invalid coding method type! The type can only be one of the following: ",
          paste0(dstype_list, collapse = ", "), ".")
   }
   return(table_list)

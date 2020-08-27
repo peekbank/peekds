@@ -1,8 +1,9 @@
+#' @importFrom dplyr "%>%"
+
 validate_for_aoi_conversion <- function(dir) {
   # check for xy_data, trials, aoa_coordinates
   # require
   rm(list = ls())
-  library(dplyr)
   library(peekds)
 
 }
