@@ -51,20 +51,21 @@ get_raw_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
 
 #' Put processed data for specific peekbank dataset on OSF
 #'
-#' @param lab_dataset_id Specific ID occurring in the file hierarchy of the relevant OSF repo.
+#' @param dataset_name Specific dataset name occurring in the file hierarchy of the relevant OSF repo.
 #' @param path Where the data live on your own machine.
 #' @param osf_address pr6wu for peekbank.
 #' @export
-put_processed_data <- function(token, lab_dataset_id, path = ".",
+put_processed_data <- function(token, dataset_name, path = ".",
                                osf_address = "pr6wu") {
   osf_auth(token = token)
 
   osfr::osf_retrieve_node(osf_address) %>%
     osfr::osf_ls_files() %>%
-    dplyr::filter(name == lab_dataset_id) %>%
+    dplyr::filter(name == dataset_name) %>%
     osfr::osf_ls_files() %>%
     dplyr::filter(name == "processed_data") %>%
-    osf_upload(path = stringr::str_c(path, list.files(path = path, recursive = TRUE)),
-               recurse = TRUE,
-               conflicts = "overwrite", verbose = TRUE, progress = TRUE)
+    osf_upload(path = stringr::str_c(path,
+                                     list.files(path = path, recursive = TRUE)),
+               recurse = TRUE, conflicts = "overwrite", verbose = TRUE,
+               progress = TRUE)
 }

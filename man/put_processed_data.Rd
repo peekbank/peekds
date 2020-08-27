@@ -4,10 +4,10 @@
 \alias{put_processed_data}
 \title{Put processed data for specific peekbank dataset on OSF}
 \usage{
-put_processed_data(token, lab_dataset_id, path = ".", osf_address = "pr6wu")
+put_processed_data(token, dataset_name, path = ".", osf_address = "pr6wu")
 }
 \arguments{
-\item{lab_dataset_id}{Specific ID occurring in the file hierarchy of the relevant OSF repo.}
+\item{dataset_name}{Specific dataset name occurring in the file hierarchy of the relevant OSF repo.}
 
 \item{path}{Where the data live on your own machine.}
 

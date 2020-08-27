@@ -4,7 +4,7 @@
 \alias{validate_for_db_import}
 \title{check all csv files against database schema for database import}
 \usage{
-validate_for_db_import(dataset_type, dir_csv, file_ext = ".csv")
+validate_for_db_import(dir_csv, file_ext = ".csv")
 }
 \arguments{
 \item{dir_csv}{the folder directory containing all the csv files,
@@ -20,7 +20,7 @@ check all csv files against database schema for database import
 }
 \examples{
 \dontrun{
-is_valid = validate_for_db_import(dir_csv = "smi_dataset/processed_data")
+msg_error_all <- validate_for_db_import(dir_csv = "./processed_data")
 }
 
 }
