@@ -14,7 +14,17 @@ process_smi_file(
 )
 }
 \arguments{
-\item{stimulus_coding}{}
+\item{x}{character, filename}
+
+\item{dir}{character, directory}
+
+\item{stims_to_remove_chars}{character, e.g. ".avi"}
+
+\item{stims_to_keep_chars}{character, e.g. "_"}
+
+\item{possible_delims}{character vector}
+
+\item{stimulus_coding}{character}
 }
 \value{
 

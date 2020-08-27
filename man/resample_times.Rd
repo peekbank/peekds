@@ -9,6 +9,9 @@ resample_times(df)
 \arguments{
 \item{dir}{df that has subject_id, dataset_id, trial_id and times}
 }
+\value{
+
+}
 \description{
 Resample times to be consistent across labs
 }

@@ -4,10 +4,10 @@
 \alias{list_ds_tables}
 \title{List the tables required for different datasets}
 \usage{
-list_ds_tables(dataset_type = "automated")
+list_ds_tables(coding_method = "eyetracking")
 }
 \arguments{
-\item{dataset_type}{}
+\item{dataset_type}{character}
 }
 \value{
 

@@ -2,16 +2,18 @@
 % Please edit documentation in R/readers.R
 \name{is_table_required}
 \alias{is_table_required}
-\title{Title}
+\title{Is this table required?}
 \usage{
-is_table_required(table_type, dataset_type = "automated")
+is_table_required(table_type, dataset_type = "auto")
 }
 \arguments{
-\item{dataset_type}{}
+\item{table_type}{character}
+
+\item{dataset_type}{character}
 }
 \value{
 
 }
 \description{
-Title
+Is this table required?
 }

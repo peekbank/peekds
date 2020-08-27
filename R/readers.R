@@ -3,15 +3,13 @@
 #' @importFrom rlang .data
 NULL
 
-#' Title
+#' Get coding method
 #'
-#' @param table_type
-#' @param dataset_type
+#' @param table_type character
+#' @param dataset_type character
 #'
 #' @return
 #' @export
-#'
-#' @examples
 get_coding_method <- function() {
   fields_json <- get_json_fields(table_type = "administrations")
   methods_json <- fields_json$options[fields_json$field_name == "coding_method", "choices"] %>%
@@ -20,15 +18,13 @@ get_coding_method <- function() {
   return(methods_json)
 }
 
-#' Title
+#' Is this table required?
 #'
-#' @param table_type
-#' @param dataset_type
+#' @param table_type character
+#' @param dataset_type character
 #'
 #' @return
 #' @export
-#'
-#' @examples
 is_table_required <- function(table_type, dataset_type = "auto") {
   table_list <- list_ds_tables(dataset_type)
   is_required <- table_type %in% table_list
@@ -37,12 +33,10 @@ is_table_required <- function(table_type, dataset_type = "auto") {
 
 #' List the tables required for different datasets
 #'
-#' @param dataset_type
+#' @param dataset_type character
 #'
 #' @return
 #' @export
-#'
-#' @examples
 list_ds_tables <- function(coding_method = "eyetracking") {
   # handcoded, automated
   dstype_list <- get_coding_method()
@@ -170,14 +164,12 @@ process_to_xy <- function(format, dir) {
   reader(dir)
 }
 
-#' Title
+#' Create empty table
 #'
-#' @param table_type
+#' @param table_type character
 #'
 #' @return
 #' @export
-#'
-#' @examples
 create_emtpy_table <- function(table_type) {
   # fetch the required columns from json file
   colnames_json <- get_json_colnames(table_type)
@@ -358,18 +350,19 @@ process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = 
 
 #' Process an individual smi raw data file
 #'
-#' @param x
-#' @param dir
-#' @param stims_to_remove_chars
-#' @param stims_to_keep_chars
-#' @param possible_delims
-#' @param stimulus_coding
+#' @param x character, filename
+#' @param dir character, directory
+#' @param stims_to_remove_chars character, e.g. ".avi"
+#' @param stims_to_keep_chars character, e.g. "_"
+#' @param possible_delims character vector
+#' @param stimulus_coding character
 #'
 #' @return
 #' @export
-#'
-#' @examples
-process_smi_file <- function(x, dir, stims_to_remove_chars=c(".avi"), stims_to_keep_chars=c("_"),possible_delims=c("\t",","),stimulus_coding="stim_column") {
+process_smi_file <- function(x, dir, stims_to_remove_chars = c(".avi"),
+                             stims_to_keep_chars = c("_"),
+                             possible_delims = c("\t",","),
+                             stimulus_coding = "stim_column") {
 
   #general parameters
   max_lines_search <- 40 #comments from initial header of smi eyetracking file

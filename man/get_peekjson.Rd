@@ -2,7 +2,7 @@
 % Please edit documentation in R/validators.R
 \name{get_peekjson}
 \alias{get_peekjson}
-\title{get json file from peekbank github}
+\title{parse json file from peekbank github into a dataframe}
 \usage{
 get_peekjson()
 }
@@ -10,7 +10,7 @@ get_peekjson()
 peekjson -- the organized dataframe from json file
 }
 \description{
-get json file from peekbank github
+parse json file from peekbank github into a dataframe
 }
 \examples{
 \dontrun{

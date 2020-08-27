@@ -2,16 +2,16 @@
 % Please edit documentation in R/readers.R
 \name{create_emtpy_table}
 \alias{create_emtpy_table}
-\title{Title}
+\title{Create empty table}
 \usage{
 create_emtpy_table(table_type)
 }
 \arguments{
-\item{table_type}{}
+\item{table_type}{character}
 }
 \value{
 
 }
 \description{
-Title
+Create empty table
 }

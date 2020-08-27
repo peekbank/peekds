@@ -2,7 +2,7 @@
 % Please edit documentation in R/validators.R
 \name{validate_table}
 \alias{validate_table}
-\title{Check if the table is EtDS compliant before saving as csv or importing into database}
+\title{Check if a dataframe/table is EtDS compliant before saving as csv or importing into database}
 \usage{
 validate_table(df_table, table_type)
 }
@@ -16,7 +16,7 @@ xy_data, aoi_data, participants, trials, dataset, aoi_regions}
 TRUE when the column names of this table are valid
 }
 \description{
-Check if the table is EtDS compliant before saving as csv or importing into database
+Check if a dataframe/table is EtDS compliant before saving as csv or importing into database
 }
 \examples{
 \dontrun{

@@ -1,11 +1,13 @@
 #' @importFrom dplyr "%>%"
 #' @importFrom magrittr "%<>%"
 #' @importFrom rlang .data
+NULL
 
 #' Resample times to be consistent across labs
 #'
 #' @param dir df that has subject_id, dataset_id, trial_id and times
 #'
+#' @return
 #' @export
 resample_times <- function(df) {
   # set sample rates
