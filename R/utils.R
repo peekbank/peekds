@@ -49,6 +49,24 @@ get_raw_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
                  conflicts = "overwrite", verbose = TRUE, progress = TRUE)
 }
 
+#' Download peekbank processed dataset from OSF
+#'
+#' @param lab_dataset_id Specific ID occurring in the file hierarchy of the relevant OSF repo.
+#' @param path Where you want it on your own machine. Will error if directory doesn't exist.
+#' @param osf_address pr6wu for peekbank.
+#' @export
+get_processed_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
+  # get file list in the relevant raw data directory and download
+  osfr::osf_retrieve_node(osf_address) %>%
+    osfr::osf_ls_files() %>%
+    dplyr::filter(name == lab_dataset_id) %>%
+    osfr::osf_ls_files() %>%
+    dplyr::filter(name == "processed_data") %>%
+    osfr::osf_ls_files() %>%
+    osfr::osf_download(path = path,
+                       conflicts = "overwrite", verbose = TRUE, progress = TRUE)
+}
+
 #' Put processed data for specific peekbank dataset on OSF
 #'
 #' @param dataset_name Specific dataset name occurring in the file hierarchy of the relevant OSF repo.

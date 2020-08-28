@@ -10,8 +10,11 @@ demo_validator <- function() {
   #file_ext = '.csv'
   #setwd("C:/Dropbox/_codes/peek/peekds/")
   dir_datasets <- "./testdataset"
-  lab_dataset_id <- "pomper_saffran2016"
-  msg_error_all <- validate_for_db_import(dir_csv = file.path(dir_datasets, lab_dataset_id, "processed_data"))
+  lab_dataset_id <- "pomper_saffran_2016"
+  dir_csv = file.path(dir_datasets, lab_dataset_id, "processed_data")
+
+  get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu")
+  msg_error_all <- validate_for_db_import(dir_csv)
 }
 
 #' parse json file from peekbank github into a dataframe
