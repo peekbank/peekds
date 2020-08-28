@@ -1,3 +1,8 @@
+#' @importFrom dplyr "%>%"
+#' @importFrom magrittr "%<>%"
+#' @importFrom rlang .data
+NULL
+
 #' Get the mode (respecting NAs)
 #'
 #' @param x Array

@@ -1,6 +1,7 @@
 #' @importFrom dplyr "%>%"
 #' @importFrom magrittr "%<>%"
 #' @importFrom rlang .data
+NULL
 
 #' Get coding method list from json file
 #'
