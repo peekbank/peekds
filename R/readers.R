@@ -1,7 +1,6 @@
 #' @importFrom dplyr "%>%"
 #' @importFrom magrittr "%<>%"
 #' @importFrom rlang .data
-NULL
 
 #' Get coding method list from json file
 #'
@@ -34,11 +33,17 @@ is_table_required <- function(table_type, coding_method) {
   return(is_required)
 }
 
-#' List the tables required for different datasets
+#' List the tables required for datasets with different coding method
 #'
 #' @param dataset_type character
 #'
 #' @return
+#'
+#' @examples
+#' \dontrun{
+#' table_list <- list_ds_tables(coding_method = "manual gaze coding")
+#' }
+#'
 #' @export
 list_ds_tables <- function(coding_method = "eyetracking") {
   # handcoded, automated

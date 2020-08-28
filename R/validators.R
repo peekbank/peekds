@@ -140,9 +140,10 @@ validate_table <- function(df_table, table_type) {
     fieldoptions <- fields_json$options[idx, ]
 
     idx_tb <- match(fieldname, colnames_table)
-    is_field_required <- isTRUE(fieldoptions$primary_key) | !fieldoptions$null
+    is_primary <- isTRUE(fieldoptions$primary_key)
+    is_field_required <- is_primary | !fieldoptions$null
 
-    # step 1: check if this is a required field
+    # step 0: check if this is a required field
     if (is_field_required & is.na(idx_tb)) {
       msg_new <- paste("\n\t-\tCannot locate required field: ", fieldname,
            ". Please add the column into the ", table_type, "processed data file.")
@@ -150,8 +151,21 @@ validate_table <- function(df_table, table_type) {
       next()
     }
 
-    # step 2: check if values are in the required type/format
+    # step 1: check if values in primary_key and unique-option fields are unique
     content_tb <- df_table[, fieldname]
+
+    if (is_primary | isTRUE(fieldoptions$unique)) {
+      if (is_primary) {
+        content_tb <- as.integer(content_tb)
+      }
+      is_unique <- length(content_tb) == length(unique(content_tb))
+      if (!is_unique) {
+        msg_new <- paste("\n\t-\tThe values in field ", fieldname, "are not unique.")
+        msg_error <- c(msg_error, msg_new)
+      }
+    }
+
+    # step 2: check if values are in the required type/format
     if (!fieldoptions$null & fieldclass == "IntegerField") {
       is_type_valid <- is.integer(content_tb)
       if (!is_type_valid) {
@@ -207,8 +221,12 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
   peekjson <- get_peekjson()
 
   coding_file <- file.path(dir_csv, paste0(table_type = "administrations", file_ext))
-  coding_table <- utils::read.csv(coding_file)
-  coding_method <- unique(coding_table[, "coding_method"])
+  if (file.exists(coding_file)) {
+    coding_table <- utils::read.csv(coding_file)
+    coding_method <- unique(coding_table[, "coding_method"])
+  } else {
+    stop("ERROR: Cannot find required administrations file.")
+  }
 
   # fetch the table list
   table_list <- peekjson$table
