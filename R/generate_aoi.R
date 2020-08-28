@@ -93,7 +93,7 @@ add_aois <- function(xy_joined) {
         x > l_x_min & x < l_x_max & y > l_y_min & y < l_y_max ~ "left",
         x > r_x_min & x < r_x_max & y > r_y_min & y < r_y_max ~ "right",
         !is.na(x) & !is.na(y) ~ "other",
-        TRUE ~ as.character(NA)),
+        TRUE ~ "missing"),
       aoi = dplyr::case_when(
         side %in% c("left","right") & side == target_side ~ "target",
         side %in% c("left","right") & side != target_side ~ "distractor",
