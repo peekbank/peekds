@@ -1,5 +1,9 @@
 # peekds
 
+# Schema Column Documentation
+
+https://docs.google.com/spreadsheets/d/1Z24n9vfrAmEk6_HpoTSh58LnkmSGmNJagguRpI1jwdo/edit?usp=sharing
+
 # Schema 
 
 |field_name  |field_class  |
