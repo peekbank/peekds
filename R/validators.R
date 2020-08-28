@@ -4,12 +4,14 @@ demo_validator <- function() {
   # check for xy_data, trials, aoa_coordinates
   # require
   rm(list = ls())
-  library(peekds)
-  library(dplyr)
   #dir_csv = "./processed_data"
   #file_ext = '.csv'
-  setwd("C:/Dropbox/_codes/peek/peekds/")
-  msg_error_all <- validate_for_db_import(dir_csv = "./testdataset/pomper_saffran2016/processed_data")
+  #setwd("C:/Dropbox/_codes/peek/peekds/")
+  dir_datasets <- "./testdataset" # local datasets dir
+  lab_dataset_id <- "attword"
+  dir_csv = file.path(dir_datasets, lab_dataset_id, "processed_data")
+  # get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
+  msg_error_all <- validate_for_db_import(dir_csv)
 }
 
 #' parse json file from peekbank github into a dataframe
@@ -129,33 +131,48 @@ validate_table <- function(df_table, table_type) {
   colnames_table <- colnames(df_table)
 
   fields_json <- get_json_fields(table_type = table_type)
+  fieldnames_json <- fields_json$field_name
 
   # start checking field/column one by one
-  for (idx in 1:length(fields_json)) {
-    fieldname <- fields_json$field_name[idx]
+  for (idx in 1:length(fieldnames_json)) {
+    fieldname <- fieldnames_json[idx]
     fieldclass <- fields_json$field_class[idx]
     fieldoptions <- fields_json$options[idx, ]
 
     idx_tb <- match(fieldname, colnames_table)
-    is_required <- fieldoptions$primary_key | !fieldoptions$null
+    is_primary <- isTRUE(fieldoptions$primary_key)
+    is_field_required <- is_primary | !fieldoptions$null
 
-    # step 1: check if this is a required field
-    if (is_required & is.na(idx_tb)) {
+    # step 0: check if this is a required field
+    if (is_field_required & is.na(idx_tb)) {
       msg_new <- paste("\n\t-\tCannot locate required field: ", fieldname,
            ". Please add the column into the ", table_type, "processed data file.")
       msg_error <- c(msg_error, msg_new)
       next()
     }
 
-    # step 2: check if values are in the required type/format
+    # step 1: check if values in primary_key and unique-option fields are unique
     content_tb <- df_table[, fieldname]
-    if (fieldclass == "IntegerField") {
+
+    if (is_primary | isTRUE(fieldoptions$unique)) {
+      if (is_primary) {
+        content_tb <- as.integer(content_tb)
+      }
+      is_unique <- length(content_tb) == length(unique(content_tb))
+      if (!is_unique) {
+        msg_new <- paste("\n\t-\tThe values in field ", fieldname, "are not unique.")
+        msg_error <- c(msg_error, msg_new)
+      }
+    }
+
+    # step 2: check if values are in the required type/format
+    if (!fieldoptions$null & fieldclass == "IntegerField") {
       is_type_valid <- is.integer(content_tb)
       if (!is_type_valid) {
         msg_new <- paste("\n\t-\t ", fieldname, " should contain integers only.")
         msg_error <- c(msg_error, msg_new)
       }
-    } else if (fieldclass == "CharField") {
+    } else if (!fieldoptions$null & fieldclass == "CharField") {
       # numbers are allowed here as well since numbers can be converted into chars
       is_type_valid <- is.character(content_tb) | (typeof(content_tb) == "integer")
       if (!is_type_valid) {
@@ -202,8 +219,17 @@ validate_table <- function(df_table, table_type) {
 validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
   # get json file from github
   peekjson <- get_peekjson()
+
+  coding_file <- file.path(dir_csv, paste0(table_type = "administrations", file_ext))
+  if (file.exists(coding_file)) {
+    coding_table <- utils::read.csv(coding_file)
+    coding_method <- unique(coding_table[, "coding_method"])
+  } else {
+    stop("ERROR: Cannot find required administrations file.")
+  }
+
   # fetch the table list
-  table_list <- list_ds_tables()
+  table_list <- peekjson$table
   # admin table is not required
   # table_list <- table_list[table_list != "admin"];
   msg_error_all <- c()
@@ -221,7 +247,7 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
       } else {
         print(paste("The processed data file ", table_type, "passed the validator!"))
       }
-    } else {
+    } else if (is_table_required(table_type, coding_method)){
       warning("Cannot find required file: ", file_csv)
     }
   }
