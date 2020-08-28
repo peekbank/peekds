@@ -2,7 +2,7 @@
 % Please edit documentation in R/readers.R
 \name{list_ds_tables}
 \alias{list_ds_tables}
-\title{List the tables required for different datasets}
+\title{List the tables required for datasets with different coding method}
 \usage{
 list_ds_tables(coding_method = "eyetracking")
 }
@@ -13,5 +13,11 @@ list_ds_tables(coding_method = "eyetracking")
 
 }
 \description{
-List the tables required for different datasets
+List the tables required for datasets with different coding method
+}
+\examples{
+\dontrun{
+table_list <- list_ds_tables(coding_method = "manual gaze coding")
+}
+
 }

@@ -4,7 +4,7 @@
 \alias{is_table_required}
 \title{Is this table required?}
 \usage{
-is_table_required(table_type, dataset_type = "auto")
+is_table_required(table_type, coding_method)
 }
 \arguments{
 \item{table_type}{character}
@@ -16,4 +16,10 @@ is_table_required(table_type, dataset_type = "auto")
 }
 \description{
 Is this table required?
+}
+\examples{
+\dontrun{
+is_required <- is_table_required(table_type = "xy_timepoints", coding_method = "manual gaze coding")
+}
+
 }
