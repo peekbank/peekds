@@ -48,11 +48,6 @@ resample_times <- function(df) {
 #' @export
 #' @return
 generate_aoi <- function(dir) {
-  SAMPLE_RATE = 40 # Hz
-  SAMPLE_DURATION = 1000/SAMPLE_RATE
-  MAX_GAP_LENGTH = .100 # S
-  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
-
   # read in xy_data, trials, aoa_coordinates
   xy <- readr::read_csv(file.path(dir, "xy_timepoints.csv"))
   trials <- readr::read_csv(file.path(dir, "trials.csv"))
