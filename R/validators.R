@@ -10,7 +10,7 @@ demo_validator <- function() {
   dir_datasets <- "./testdataset" # local datasets dir
   lab_dataset_id <- "attword"
   dir_csv = file.path(dir_datasets, lab_dataset_id, "processed_data")
-  # get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
+  get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
   msg_error_all <- validate_for_db_import(dir_csv)
 }
 
@@ -163,6 +163,10 @@ validate_table <- function(df_table, table_type) {
         msg_new <- paste("\n\t-\tThe values in field ", fieldname, "are not unique.")
         msg_error <- c(msg_error, msg_new)
       }
+      if(sum(is.na(content_tb)) > 0) {
+        msg_new <- paste("\n\t-\tField ", fieldname, " cannot contain NA values.")
+        msg_error <- c(msg_error, msg_new)
+      }
     }
 
     # step 2: check if values are in the required type/format
@@ -230,6 +234,7 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
 
   # fetch the table list
   table_list <- peekjson$table
+  table_list <- table_list[table_list != 'admin']
   # admin table is not required
   # table_list <- table_list[table_list != "admin"];
   msg_error_all <- c()
