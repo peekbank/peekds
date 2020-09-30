@@ -61,6 +61,11 @@ get_raw_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
 #' @param osf_address pr6wu for peekbank.
 #' @export
 get_processed_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
+  # check if path exists, if not, create path
+  if (!file.exists(path)){
+    dir.create(file.path(path), showWarnings = FALSE)
+  }
+
   # get file list in the relevant raw data directory and download
   osfr::osf_retrieve_node(osf_address) %>%
     osfr::osf_ls_files() %>%

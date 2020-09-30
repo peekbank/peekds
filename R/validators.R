@@ -4,11 +4,11 @@ demo_validator <- function() {
   # check for xy_data, trials, aoa_coordinates
   # require
   rm(list = ls())
-  #dir_csv = "./processed_data"
   #file_ext = '.csv'
-  #setwd("C:/Dropbox/_codes/peek/peekds/")
-  dir_datasets <- "./testdataset" # local datasets dir
-  lab_dataset_id <- "attword"
+  #setwd("")
+  dir_datasets <- "testdataset" # local datasets dir
+  lab_dataset_id <- "frank_tablet_2016"
+  dir.create(file.path(dir_datasets, lab_dataset_id))
   dir_csv = file.path(dir_datasets, lab_dataset_id, "processed_data")
   get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
   msg_error_all <- validate_for_db_import(dir_csv)
