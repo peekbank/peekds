@@ -11,7 +11,6 @@ demo_resample <- function() {
   #setwd("")
   dir_datasets <- "testdataset" # local datasets dir
   lab_dataset_id <- "pomper_saffran_2016"
-  dir.create(file.path(dir_datasets, lab_dataset_id))
   dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
   file_ext <- '.csv'
   table_type <- "aoi_timepoints"
@@ -28,8 +27,6 @@ resample_times <- function(dir_csv, table_type) {
   # set sample rates
   SAMPLE_RATE = 40 # Hz
   SAMPLE_DURATION = 1000/SAMPLE_RATE
-  MAX_GAP_LENGTH = .100 # S
-  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
 
   # read data from the csv file
   file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
@@ -71,11 +68,13 @@ resample_times <- function(dir_csv, table_type) {
       if (table_type == "aoi_timepoints") {
         t_origin <- df_trial$t_norm
         data_origin <- df_trial$aoi
+        # create the new timestamps for resampling
+        t_start <- min(t_origin) - mod(min(t_origin), SAMPLE_DURATION)
+        t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
         # exchange strings values with integers for resampling
         data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, missing = 3)
         # start resampling with approxfun
         f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
-        t_resampled <- seq(from = min(t_origin),to = max(t_origin), by = SAMPLE_DURATION)
         data_resampled <- f(t_resampled) %>%
           dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "missing")
 
@@ -90,9 +89,11 @@ resample_times <- function(dir_csv, table_type) {
         t_origin <- df_trial$t
         x_origin <- df_trial$x
         y_origin <- df_trial$y
+        # create the new timestamps for resampling
+        t_start <- min(t_origin) - mod(min(t_origin), SAMPLE_DURATION)
+        t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
         # start resampling with approxfun
         fx <- approxfun(t_origin, x_origin, method = "linear", rule = 2)
-        t_resampled <- seq(from = min(t_origin),to = max(t_origin), by = SAMPLE_DURATION)
         x_resampled <- fx(t_resampled)
 
         fy <- approxfun(t_origin, y_origin, method = "linear", rule = 2)
