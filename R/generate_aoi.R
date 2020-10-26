@@ -15,7 +15,24 @@ demo_resample <- function() {
   dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
   file_ext <- '.csv'
   table_type <- "aoi_timepoints"
-  file_csv = file.path(dir_csv, paste0(table_type, file_ext))
+  resample_times(dir_csv, table_type)
+}
+
+#' Resample times to be consistent across labs
+#'
+#' @param dir df that has subject_id, dataset_id, trial_id and times
+#'
+#' @return df_out with resampled time, xy or aoi value rows
+#' @export
+resample_times <- function(dir_csv, table_type) {
+  # set sample rates
+  SAMPLE_RATE = 40 # Hz
+  SAMPLE_DURATION = 1000/SAMPLE_RATE
+  MAX_GAP_LENGTH = .100 # S
+  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+
+  # read data from the csv file
+  file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
 
   if (file.exists(file_csv)) {
     # read in csv file and check if the data is valid
@@ -24,24 +41,24 @@ demo_resample <- function() {
     warning("Cannot find required file: ", file_csv)
   }
 
-  # set sample rates
-  SAMPLE_RATE = 40 # Hz
-  SAMPLE_DURATION = 1000/SAMPLE_RATE
-  MAX_GAP_LENGTH = .100 # S
-  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
-
-  df <- df_table %>% dplyr::group_by(.data$administration_id, .data$trial_id)
-
   ad_list <- unique(df_table$administration_id)
   trial_list <- unique(df_table$trial_id)
 
   ad_list <- unique(df_table$administration_id)
   trial_list <- unique(df_table$trial_id)
 
-  x <- c("t_norm", "aoi", "trial_id", "administration_id")
+  # initialize the output df
+  if (table_type == "aoi_timepoints") {
+    x <- c("t_norm", "aoi", "trial_id", "administration_id")
+  } else if (table_type == "xy_timepoints") {
+    x <- c("t", "x", "y", "trial_id", "administration_id")
+  } else {
+    stop("Current resample function only processes aoi_timepoints/xy_timepoints type data.")
+  }
   df_out <- data.frame(matrix(ncol = length(x), nrow = 0))
   colnames(df_out) <- x
 
+  # go through each trial within every administration and resample the trial time series
   for (adidx in ad_list) {
     for (trialidx in trial_list) {
       # slicing df based on trial and admin id
@@ -49,42 +66,73 @@ demo_resample <- function() {
       if(nrow(df_trial) < 1) {
         next()
       }
-      t_origin <- df_trial$t_norm
-      data_origin <- df_trial$aoi
-      # exchange strings values with integers for resampling
-      data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, missing = 3)
-      # start resampling with approxfun
-      f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
-      t_resampled <- seq(from = min(t_origin),to = max(t_origin), by = SAMPLE_DURATION)
-      data_resampled <- f(t_resampled) %>%
-        dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "missing")
 
-      df_resampled <- data.frame(
-        t_norm = t_resampled,
-        aoi = data_resampled,
-        trial_id = trialidx,
-        administration_id = adidx
-      )
+      # if not empty, starting resample process
+      if (table_type == "aoi_timepoints") {
+        t_origin <- df_trial$t_norm
+        data_origin <- df_trial$aoi
+        # exchange strings values with integers for resampling
+        data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, missing = 3)
+        # start resampling with approxfun
+        f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
+        t_resampled <- seq(from = min(t_origin),to = max(t_origin), by = SAMPLE_DURATION)
+        data_resampled <- f(t_resampled) %>%
+          dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "missing")
 
+        # adding back the columns to match schema
+        df_resampled <- data.frame(
+          t_norm = t_resampled,
+          aoi = data_resampled,
+          trial_id = trialidx,
+          administration_id = adidx
+        )
+      } else if (table_type == "xy_timepoints") {
+        t_origin <- df_trial$t
+        x_origin <- df_trial$x
+        y_origin <- df_trial$y
+        # start resampling with approxfun
+        fx <- approxfun(t_origin, x_origin, method = "linear", rule = 2)
+        t_resampled <- seq(from = min(t_origin),to = max(t_origin), by = SAMPLE_DURATION)
+        x_resampled <- fx(t_resampled)
+
+        fy <- approxfun(t_origin, y_origin, method = "linear", rule = 2)
+        y_resampled <- fy(t_resampled)
+
+        # adding back the columns to match schema
+        df_resampled <- data.frame(
+          trial_id = trialidx,
+          administration_id = adidx,
+          t = t_resampled,
+          x = x_resampled,
+          y = y_resampled
+        )
+      }
+      # adding the resampled rows of data to the output df
       df_out <- rbind(df_out, df_resampled)
     }
   }
 
-  return(df_out)
+  # re-order the output dataframes by these columns: t_norm, administration_id, trial_id
+  df_out <- dplyr::arrange(df_out, t_norm, administration_id, trial_id)
+
+  # write the resampled df into a new csv
+  file_resampled <- file.path(dir_csv, paste0(table_type, '_resampled', file_ext))
+  write.csv(df_out, file = file_resampled)
 }
 
 #' Normalize time by the onset
 #'
 #' @param dir df that has subject_id, dataset_id, trial_id and times
 #'
-#' @return
+#' @return df_out df that has the normalized times
 #' @export
 center_times <- function(df) {
   # center timestamp (0 POD)
-  df <- df %>%
+  df_out <- df %>%
     dplyr::group_by(.data$administration_id, .data$trial_id, .data$dataset_id) %>%
     dplyr::mutate(t_trial = .data$t - .data$t[1],
                   t_zeroed = .data$t_trial - .data$point_of_disambiguation)
+  return(df_out)
 }
 
 
@@ -94,7 +142,7 @@ center_times <- function(df) {
 #'
 #' @return
 #' @export
-resample_times <- function(df) {
+resample_times_obsolete <- function(df) {
   # set sample rates
   SAMPLE_RATE = 40 # Hz
   SAMPLE_DURATION = 1000/SAMPLE_RATE
