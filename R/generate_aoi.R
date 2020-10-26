@@ -19,14 +19,15 @@ demo_resample <- function() {
 
 #' Resample times to be consistent across labs
 #'
-#' @param dir df that has subject_id, dataset_id, trial_id and times
+#' @param dir_csv processed csv folder directory
+#' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
 #'
 #' @return df_out with resampled time, xy or aoi value rows
 #' @export
 resample_times <- function(dir_csv, table_type) {
   # set sample rates
-  SAMPLE_RATE = 40 # Hz
-  SAMPLE_DURATION = 1000/SAMPLE_RATE
+  SAMPLE_RATE <<- 40 # Hz
+  SAMPLE_DURATION <<- 1000/SAMPLE_RATE
 
   # read data from the csv file
   file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
@@ -37,12 +38,6 @@ resample_times <- function(dir_csv, table_type) {
   } else {
     warning("Cannot find required file: ", file_csv)
   }
-
-  ad_list <- unique(df_table$administration_id)
-  trial_list <- unique(df_table$trial_id)
-
-  ad_list <- unique(df_table$administration_id)
-  trial_list <- unique(df_table$trial_id)
 
   # initialize the output df
   if (table_type == "aoi_timepoints") {
@@ -55,21 +50,24 @@ resample_times <- function(dir_csv, table_type) {
   df_out <- data.frame(matrix(ncol = length(x), nrow = 0))
   colnames(df_out) <- x
 
-  # go through each trial within every administration and resample the trial time series
+  # Next, slice the df based on administration id and trial id, then go through every sub-df for resample process
+  ad_list <- unique(df_table$administration_id)
+  trial_list <- unique(df_table$trial_id)
+
   for (adidx in ad_list) {
     for (trialidx in trial_list) {
       # slicing df based on trial and admin id
       df_trial <- df_table[which(df_table$administration_id == adidx & df_table$trial_id == trialidx), ]
+      # if empty, skip loop
       if(nrow(df_trial) < 1) {
         next()
       }
-
       # if not empty, starting resample process
       if (table_type == "aoi_timepoints") {
         t_origin <- df_trial$t_norm
         data_origin <- df_trial$aoi
         # create the new timestamps for resampling
-        t_start <- min(t_origin) - mod(min(t_origin), SAMPLE_DURATION)
+        t_start <- min(t_origin) - (min(t_origin) %% SAMPLE_DURATION)
         t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
         # exchange strings values with integers for resampling
         data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, missing = 3)
@@ -90,7 +88,7 @@ resample_times <- function(dir_csv, table_type) {
         x_origin <- df_trial$x
         y_origin <- df_trial$y
         # create the new timestamps for resampling
-        t_start <- min(t_origin) - mod(min(t_origin), SAMPLE_DURATION)
+        t_start <- min(t_origin) - (min(t_origin) %% SAMPLE_DURATION)
         t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
         # start resampling with approxfun
         fx <- approxfun(t_origin, x_origin, method = "linear", rule = 2)
@@ -111,7 +109,7 @@ resample_times <- function(dir_csv, table_type) {
       # adding the resampled rows of data to the output df
       df_out <- rbind(df_out, df_resampled)
     }
-  }
+  } # end of loop
 
   # re-order the output dataframes by these columns: t_norm, administration_id, trial_id
   df_out <- dplyr::arrange(df_out, t_norm, administration_id, trial_id)
@@ -123,7 +121,7 @@ resample_times <- function(dir_csv, table_type) {
 
 #' Normalize time by the onset
 #'
-#' @param dir df that has subject_id, dataset_id, trial_id and times
+#' @param df df that has subject_id, dataset_id, trial_id and times
 #'
 #' @return df_out df that has the normalized times
 #' @export
