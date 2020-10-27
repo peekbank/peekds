@@ -3,17 +3,17 @@
 #' @importFrom rlang .data
 NULL
 
+# demo function for running resample process for aoi or xy data
 demo_resample <- function() {
   # check for xy_data, trials, aoa_coordinates
   # require
   rm(list = ls())
-  #file_ext = '.csv'
   #setwd("")
   dir_datasets <- "testdataset" # local datasets dir
   lab_dataset_id <- "pomper_saffran_2016"
   dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
-  file_ext <- '.csv'
   table_type <- "aoi_timepoints"
+  table_type <- "xy_timepoints"
   resample_times(dir_csv, table_type)
 }
 
@@ -23,8 +23,17 @@ demo_resample <- function() {
 #' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
 #'
 #' @return df_out with resampled time, xy or aoi value rows
+#'
+#' #' @examples
+#' \dontrun{
+#' dir_datasets <- "testdataset" # local datasets dir
+#' lab_dataset_id <- "pomper_saffran_2016"
+#' dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
+#' resample_times(dir_csv, table_type = "aoi_timepoints")
+#' }
+#'
 #' @export
-resample_times <- function(dir_csv, table_type) {
+resample_times <- function(dir_csv, table_type, file_ext = '.csv') {
   # set sample rates
   SAMPLE_RATE <<- 40 # Hz
   SAMPLE_DURATION <<- 1000/SAMPLE_RATE
@@ -70,11 +79,11 @@ resample_times <- function(dir_csv, table_type) {
         t_start <- min(t_origin) - (min(t_origin) %% SAMPLE_DURATION)
         t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
         # exchange strings values with integers for resampling
-        data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, missing = 3)
+        data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
         # start resampling with approxfun
         f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
         data_resampled <- f(t_resampled) %>%
-          dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "missing")
+          dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
 
         # adding back the columns to match schema
         df_resampled <- data.frame(
@@ -87,15 +96,31 @@ resample_times <- function(dir_csv, table_type) {
         t_origin <- df_trial$t
         x_origin <- df_trial$x
         y_origin <- df_trial$y
+
         # create the new timestamps for resampling
         t_start <- min(t_origin) - (min(t_origin) %% SAMPLE_DURATION)
         t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
-        # start resampling with approxfun
-        fx <- approxfun(t_origin, x_origin, method = "linear", rule = 2)
-        x_resampled <- fx(t_resampled)
 
-        fy <- approxfun(t_origin, y_origin, method = "linear", rule = 2)
-        y_resampled <- fy(t_resampled)
+        if (sum(is.na(x_origin)) == length(x_origin) || sum(is.na(y_origin)) == length(y_origin)) {
+          # if xy only have na data
+          x_resampled <- rep(NA, length(t_resampled))
+          y_resampled <- rep(NA, length(t_resampled))
+        } else {
+          # start resampling with approxfun
+          if (sum(is.na(x_origin)) == (length(x_origin)-1)) {
+            fx <- approxfun(t_origin, x_origin, method = "constant")
+          } else {
+            fx <- approxfun(t_origin, x_origin, method = "linear")
+          }
+          x_resampled <- fx(t_resampled)
+
+          if (sum(is.na(y_origin)) == (length(y_origin)-1)) {
+            fy <- approxfun(t_origin, y_origin, method = "constant")
+          } else {
+            fy <- approxfun(t_origin, y_origin, method = "linear")
+          }
+          y_resampled <- fy(t_resampled)
+        }
 
         # adding back the columns to match schema
         df_resampled <- data.frame(
@@ -112,7 +137,11 @@ resample_times <- function(dir_csv, table_type) {
   } # end of loop
 
   # re-order the output dataframes by these columns: t_norm, administration_id, trial_id
-  df_out <- dplyr::arrange(df_out, t_norm, administration_id, trial_id)
+  if (table_type == "aoi_timepoints") {
+    df_out <- dplyr::arrange(df_out, t_norm, administration_id, trial_id)
+  } else if (table_type == "xy_timepoints") {
+    df_out <- dplyr::arrange(df_out, t, administration_id, trial_id)
+  }
 
   # write the resampled df into a new csv
   file_resampled <- file.path(dir_csv, paste0(table_type, '_resampled', file_ext))
@@ -135,13 +164,13 @@ center_times <- function(df) {
 }
 
 
-#' Resample times to be consistent across labs
+#' Round times to our specified sample rate to be consistent across labs
 #'
 #' @param dir df that has subject_id, dataset_id, trial_id and times
 #'
 #' @return
 #' @export
-resample_times_obsolete <- function(df) {
+round_times <- function(df) {
   # set sample rates
   SAMPLE_RATE = 40 # Hz
   SAMPLE_DURATION = 1000/SAMPLE_RATE
