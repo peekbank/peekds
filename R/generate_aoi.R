@@ -14,12 +14,23 @@ demo_resample <- function() {
   dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
   table_type <- "aoi_timepoints"
   table_type <- "xy_timepoints"
-  resample_times(dir_csv, table_type)
+
+  # read data from the csv file
+  file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
+
+  if (file.exists(file_csv)) {
+    # read in csv file and check if the data is valid
+    df_table <- utils::read.csv(file_csv)
+  } else {
+    stop("Cannot find required file: ", file_csv)
+  }
+
+  resample_times(df_table, table_type)
 }
 
 #' Resample times to be consistent across labs
 #'
-#' @param dir_csv processed csv folder directory
+#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
 #' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
 #'
 #' @return df_out with resampled time, xy or aoi value rows
@@ -33,20 +44,10 @@ demo_resample <- function() {
 #' }
 #'
 #' @export
-resample_times <- function(dir_csv, table_type, file_ext = '.csv') {
+resample_times <- function(df_table, table_type, file_ext = '.csv') {
   # set sample rates
   SAMPLE_RATE <<- 40 # Hz
   SAMPLE_DURATION <<- 1000/SAMPLE_RATE
-
-  # read data from the csv file
-  file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
-
-  if (file.exists(file_csv)) {
-    # read in csv file and check if the data is valid
-    df_table <- utils::read.csv(file_csv)
-  } else {
-    warning("Cannot find required file: ", file_csv)
-  }
 
   # initialize the output df
   if (table_type == "aoi_timepoints") {

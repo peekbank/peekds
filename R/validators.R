@@ -4,9 +4,12 @@ NULL
 # demo function for running validator
 demo_validator <- function() {
   # check for xy_data, trials, aoa_coordinates
-  rm(list = ls())
+  #rm(list = ls())
+  library(peekbankr)
+  library(dplyr)
+  library(ggplot2)
+  library(ggthemes)
   #setwd("")
-  dir_datasets <- "testdataset" # local datasets dir
   datasets <- get_datasets()
   lab_dataset_id <- "reflook_v3"
   dir.create(file.path(dir_datasets, lab_dataset_id))
@@ -18,75 +21,79 @@ demo_validator <- function() {
 # demo function for running visualization check
 demo_vis <- function() {
   rm(list = ls())
-  setwd("C:/Dropbox/_codes/peek/peekds")
+  # setwd("C:/Dropbox/_codes/peek/peekds")
+  dir_datasets <- "testdataset" # local datasets dir
   datasets <- get_datasets()
   dataset_list <- datasets$dataset_name
   file_ext <- '.csv'
   for (lab_dataset_id in dataset_list) {
     dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
 
+    # get in all the tables
+    df_dataset <- data.frame(
+      dataset_id = 0,
+      lab_dataset_id = lab_dataset_id,
+      dataset_name = lab_dataset_id
+    )
+
+    df_aoi <- utils::read.csv(file.path(dir_csv, paste0("aoi_timepoints_resampled", file_ext)))
+    df_stimuli <- utils::read.csv(file.path(dir_csv, paste0("stimuli", file_ext)))
+    df_trials <- utils::read.csv(file.path(dir_csv, paste0("trials", file_ext)))
+    df_admin <- utils::read.csv(file.path(dir_csv, paste0("administrations", file_ext)))
+
+    t_range <- c(-1000,3000)
+    aoi_data_joined <- df_aoi %>%
+      right_join(df_admin) %>%
+      right_join(df_trials) %>%
+      right_join(df_dataset) %>%
+      mutate(stimulus_id = target_id) %>%
+      right_join(df_stimuli) %>%
+      filter(t_norm > t_range[1],
+             t_norm < t_range[2])
+
+    # get subject info
+    subinfo <- aoi_data_joined %>%
+      group_by(subject_id, dataset_id, lab_dataset_id, age) %>%
+      summarise(trials = length(unique(trial_id)))
+
+    subinfo %>%
+      ggplot(aes(x = age, fill = lab_dataset_id)) +
+      geom_histogram(binwidth = 3) +
+      scale_fill_solarized(name = "Dataset") +
+      xlab("Age (months)")
+
+    # time series
+    means <- aoi_data_joined %>%
+      filter(age > 12, age <= 60) %>%
+      mutate(age_binned = cut(age, seq(0,60,12))) %>%
+      group_by(t_norm, dataset_name, age_binned, stimulus_novelty) %>%
+      summarise(n = sum(aoi %in% c("target","distractor"), na.rm = TRUE),
+                p = sum(aoi == "target", na.rm = TRUE),
+                prop_looking = p / n,
+                ci_lower = binom::binom.confint(p, n, method = "bayes")$lower,
+                ci_upper = binom::binom.confint(p, n, method = "bayes")$upper)
+
+    g1 <- ggplot(means,
+                 aes(x = t_norm, y = prop_looking)) +
+      geom_rect(xmin = t_range[1],
+                xmax = t_range[2],
+                ymin = 0,
+                ymax = 1, fill = "gray", alpha = .1) +
+      geom_line(aes(col = dataset_name)) +
+      geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper,
+                      fill = dataset_name), alpha = .5) +
+      facet_grid(age_binned~stimulus_novelty) +
+      geom_hline(yintercept = .5, lty = 2) +
+      geom_vline(xintercept = 0, lty = 2) +
+      ylab("Proportion Target Looking") +
+      xlab("Time (msec)") +
+      theme_classic() +
+      scale_color_solarized() +
+      scale_fill_solarized()
+
+    plot_name <- paste0(lab_dataset_id, "_profile.png")
+    ggsave(plot_name)
   }
-
-  # get in all the tables
-  datasets <- data.frame(
-    dataset_id = 0,
-    lab_dataset_id == lab_dataset_id
-  )
-
-  df_aoi <- utils::read.csv(file.path(dir_csv, paste0("aoi_timepoints_resampled", file_ext)))
-  df_stimuli <- utils::read.csv(file.path(dir_csv, paste0("stimuli", file_ext)))
-  df_trials <- utils::read.csv(file.path(dir_csv, paste0("trials", file_ext)))
-  df_admin <- utils::read.csv(file.path(dir_csv, paste0("administrations", file_ext)))
-
-  t_range <- c(-1000,3000)
-  aoi_data_joined <- df_aoi %>%
-    right_join(df_admin) %>%
-    right_join(df_trials) %>%
-    right_join(datasets) %>%
-    mutate(stimulus_id = target_id) %>%
-    right_join(df_stimuli) %>%
-    filter(t_norm > t_range[1],
-           t_norm < t_range[2])
-
-  # get subject info
-  subinfo <- aoi_data_joined %>%
-    group_by(subject_id, dataset_id, lab_dataset_id, age) %>%
-    summarise(trials = length(unique(trial_id)))
-
-  subinfo %>%
-    ggplot(aes(x = age, fill = lab_dataset_id)) +
-    geom_histogram(binwidth = 3) +
-    scale_fill_solarized(name = "Dataset") +
-    xlab("Age (months)")
-
-  # time series
-  means <- aoi_data_joined %>%
-    filter(age > 12, age <= 60) %>%
-    mutate(age_binned = cut(age, seq(0,60,12))) %>%
-    group_by(t_norm, dataset_name, age_binned, stimulus_novelty) %>%
-    summarise(n = sum(aoi %in% c("target","distractor"), na.rm = TRUE),
-              p = sum(aoi == "target", na.rm = TRUE),
-              prop_looking = p / n,
-              ci_lower = binom::binom.confint(p, n, method = "bayes")$lower,
-              ci_upper = binom::binom.confint(p, n, method = "bayes")$upper)
-
-  ggplot(means,
-         aes(x = t_norm, y = prop_looking)) +
-    geom_rect(xmin = t_range[1],
-              xmax = t_range[2],
-              ymin = 0,
-              ymax = 1, fill = "gray", alpha = .1) +
-    geom_line(aes(col = dataset_name)) +
-    geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper,
-                    fill = dataset_name), alpha = .5) +
-    facet_grid(age_binned~stimulus_novelty) +
-    geom_hline(yintercept = .5, lty = 2) +
-    geom_vline(xintercept = 0, lty = 2) +
-    ylab("Proportion Target Looking") +
-    xlab("Time (msec)") +
-    theme_classic() +
-    scale_color_solarized() +
-    scale_fill_solarized()
 }
 
 #' parse json file from peekbank github into a dataframe
