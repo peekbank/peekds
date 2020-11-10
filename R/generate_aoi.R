@@ -28,7 +28,15 @@ demo_resample <- function() {
   resample_times(df_table, table_type)
 }
 
-#' Resample times to be consistent across labs
+#' This function resample times to be consistent across labs.
+#' Resampling is done by the following steps:
+#' 1. iterate through every trial for every administration
+#' 2. create desired timepoint sequence with equal spacing according to pre-specified SAMPLE_RATE parameter
+#' 3. use approxfun to interpolate given data points to align with desired timepoint sequence
+#'     "constant" interpolation method is used for AOI timepoints;
+#'     "linear" interpolation method is used for xy timepoints;
+#'     for more details on approxfun, please see: https://stat.ethz.ch/R-manual/R-devel/library/stats/html/approxfun.html
+#' 4. after resampling, bind resampled dataframes back together and re-assign aoi_timepoint_id
 #'
 #' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
 #' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
@@ -40,6 +48,7 @@ demo_resample <- function() {
 #' dir_datasets <- "testdataset" # local datasets dir
 #' lab_dataset_id <- "pomper_saffran_2016"
 #' dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
+#' df_table <- utils::read.csv(file_csv)
 #' resample_times(dir_csv, table_type = "aoi_timepoints")
 #' }
 #'
