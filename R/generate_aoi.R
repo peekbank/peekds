@@ -3,6 +3,14 @@
 #' @importFrom rlang .data
 NULL
 
+# set package globals in this way to avoid messing up the workspace of the user loading the package
+pkg.globals <- new.env()
+pkg.globals$SAMPLE_RATE <- 40 # Hz
+pkg.globals$SAMPLE_DURATION <- 1000/SAMPLE_RATE
+pkg.globals$MAX_GAP_LENGTH <- .100 # S
+pkg.globals$MAX_GAP_SAMPLES <- pkg.globals$MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+
+
 # demo function for running resample process for aoi or xy data
 demo_resample <- function() {
   # check for xy_data, trials, aoa_coordinates
@@ -13,7 +21,10 @@ demo_resample <- function() {
   lab_dataset_id <- "pomper_saffran_2016"
   dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
   table_type <- "aoi_timepoints"
-  table_type <- "xy_timepoints"
+  # table_type <- "xy_timepoints"
+  file_ext <- ".csv"
+
+  get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu")
 
   # read data from the csv file
   file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
@@ -54,9 +65,6 @@ demo_resample <- function() {
 #'
 #' @export
 resample_times <- function(df_table, table_type, file_ext = '.csv') {
-  # set sample rates
-  SAMPLE_RATE <<- 40 # Hz
-  SAMPLE_DURATION <<- 1000/SAMPLE_RATE
 
   # initialize the output df
   if (table_type == "aoi_timepoints") {
@@ -85,11 +93,14 @@ resample_times <- function(df_table, table_type, file_ext = '.csv') {
       if (table_type == "aoi_timepoints") {
         t_origin <- df_trial$t_norm
         data_origin <- df_trial$aoi
+
         # create the new timestamps for resampling
-        t_start <- min(t_origin) - (min(t_origin) %% SAMPLE_DURATION)
-        t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
+        t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
+        t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
+
         # exchange strings values with integers for resampling
         data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
+
         # start resampling with approxfun
         f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
         data_resampled <- f(t_resampled) %>%
@@ -108,8 +119,8 @@ resample_times <- function(df_table, table_type, file_ext = '.csv') {
         y_origin <- df_trial$y
 
         # create the new timestamps for resampling
-        t_start <- min(t_origin) - (min(t_origin) %% SAMPLE_DURATION)
-        t_resampled <- seq(from = t_start, to = max(t_origin), by = SAMPLE_DURATION)
+        t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
+        t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
 
         if (sum(is.na(x_origin)) == length(x_origin) || sum(is.na(y_origin)) == length(y_origin)) {
           # if xy only have na data
@@ -182,10 +193,6 @@ center_times <- function(df) {
 #' @export
 round_times <- function(df) {
   # set sample rates
-  SAMPLE_RATE = 40 # Hz
-  SAMPLE_DURATION = 1000/SAMPLE_RATE
-  MAX_GAP_LENGTH = .100 # S
-  MAX_GAP_SAMPLES = MAX_GAP_LENGTH / (1/SAMPLE_RATE)
 
   df %>% dplyr::group_by(.data$administration_id, .data$trial_id) %>%
   tidyr::nest() %>%
@@ -193,11 +200,11 @@ round_times <- function(df) {
     data = .data$data %>%
       purrr::map(function(df) {
         df_rounded <- df %>%
-          dplyr::mutate(t_zeroed = round(SAMPLE_DURATION * round(t_zeroed/SAMPLE_DURATION)))
+          dplyr::mutate(t_zeroed = round(pkg.globals$SAMPLE_DURATION * round(t_zeroed/pkg.globals$SAMPLE_DURATION)))
 
         t_resampled <- tibble::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
                                                            max(df_rounded$t_zeroed),
-                                                           SAMPLE_DURATION)))
+                                                           pkg.globals$SAMPLE_DURATION)))
 
         dplyr::left_join(t_resampled, df_rounded, by = "t_zeroed") %>%
           dplyr::group_by(t_zeroed)
@@ -234,7 +241,7 @@ generate_aoi <- function(dir) {
     dplyr::ungroup() %>%
     dplyr::group_by(dataset_id, administration_id, trial_id) %>%
     dplyr::mutate(aoi = zoo::na.locf(aoi,
-                                     maxgap = MAX_GAP_SAMPLES,
+                                     maxgap = pkg.globals$MAX_GAP_SAMPLES,
                                      na.rm=FALSE)) %>%  # last observation carried forward
     dplyr::ungroup() %>%
     dplyr::mutate(aoi_timepoint_id = 0:(dplyr::n() - 1)) %>%
