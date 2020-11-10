@@ -4,11 +4,11 @@
 NULL
 
 # set package globals in this way to avoid messing up the workspace of the user loading the package
-pkg.globals <- new.env()
-pkg.globals$SAMPLE_RATE <- 40 # Hz
-pkg.globals$SAMPLE_DURATION <- 1000/SAMPLE_RATE
-pkg.globals$MAX_GAP_LENGTH <- .100 # S
-pkg.globals$MAX_GAP_SAMPLES <- pkg.globals$MAX_GAP_LENGTH / (1/SAMPLE_RATE)
+pkg_globals <- new.env()
+pkg_globals$SAMPLE_RATE <- 40 # Hz
+pkg_globals$SAMPLE_DURATION <- 1000/pkg_globals$SAMPLE_RATE
+pkg_globals$MAX_GAP_LENGTH <- .100 # S
+pkg_globals$MAX_GAP_SAMPLES <- pkg_globals$MAX_GAP_LENGTH / (1/pkg_globals$SAMPLE_RATE)
 
 
 # demo function for running resample process for aoi or xy data
@@ -102,6 +102,7 @@ resample_times <- function(df_table, table_type, file_ext = '.csv') {
         data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
 
         # start resampling with approxfun
+        # note that there is no max gap here
         f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
         data_resampled <- f(t_resampled) %>%
           dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
@@ -200,11 +201,11 @@ round_times <- function(df) {
     data = .data$data %>%
       purrr::map(function(df) {
         df_rounded <- df %>%
-          dplyr::mutate(t_zeroed = round(pkg.globals$SAMPLE_DURATION * round(t_zeroed/pkg.globals$SAMPLE_DURATION)))
+          dplyr::mutate(t_zeroed = round(pkg_globals$SAMPLE_DURATION * round(t_zeroed/pkg_globals$SAMPLE_DURATION)))
 
         t_resampled <- tibble::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
                                                            max(df_rounded$t_zeroed),
-                                                           pkg.globals$SAMPLE_DURATION)))
+                                                           pkg_globals$SAMPLE_DURATION)))
 
         dplyr::left_join(t_resampled, df_rounded, by = "t_zeroed") %>%
           dplyr::group_by(t_zeroed)
@@ -241,7 +242,7 @@ generate_aoi <- function(dir) {
     dplyr::ungroup() %>%
     dplyr::group_by(dataset_id, administration_id, trial_id) %>%
     dplyr::mutate(aoi = zoo::na.locf(aoi,
-                                     maxgap = pkg.globals$MAX_GAP_SAMPLES,
+                                     maxgap = pkg_globals$MAX_GAP_SAMPLES,
                                      na.rm=FALSE)) %>%  # last observation carried forward
     dplyr::ungroup() %>%
     dplyr::mutate(aoi_timepoint_id = 0:(dplyr::n() - 1)) %>%
