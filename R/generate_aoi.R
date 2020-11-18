@@ -10,10 +10,33 @@ pkg_globals$SAMPLE_DURATION <- 1000/pkg_globals$SAMPLE_RATE
 pkg_globals$MAX_GAP_LENGTH <- .100 # S
 pkg_globals$MAX_GAP_SAMPLES <- pkg_globals$MAX_GAP_LENGTH / (1/pkg_globals$SAMPLE_RATE)
 
+# demo function later to be deleted
+demo_resample <- function() {
+  # after clean and rebuild
+  library(dplyr)
+  library(magrittr)
+  library(purrr)
+  datasets <- get_datasets()
+  lab_dataset_id <- "pomper_saffran_2016"
+  dir.create(file.path(dir_datasets, lab_dataset_id))
+  dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
+
+  file_ext <- '.csv'
+  table_type <- "aoi_timepoints"
+  file_csv = file.path(dir_csv, paste0(table_type, file_ext))
+  df_table <- utils::read.csv(file_csv)
+
+  tictoc::tic()
+  df_resampled <- resample_times(df_table, table_type = "aoi_timepoints")
+  tictoc::toc()
+}
+
 # key function
 resample_aoi_trial <- function(df_trial) {
   t_origin <- df_trial$t_norm
   data_origin <- df_trial$aoi
+  trialidx <- df_trial$trial_id[1]
+  adidx <- df_trial$administration_id[1]
 
   # create the new timestamps for resampling
   t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
@@ -42,6 +65,9 @@ resample_xy_trial <- function(df_trial) {
   x_origin <- df_trial$x
   y_origin <- df_trial$y
 
+  trialidx <- df_trial$trial_id[1]
+  adidx <- df_trial$administration_id[1]
+
   # create the new timestamps for resampling
   t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
   t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
@@ -68,13 +94,12 @@ resample_xy_trial <- function(df_trial) {
   }
 
   # adding back the columns to match schema
-  data.frame(
-    trial_id = trialidx,
-    administration_id = adidx,
-    t = t_resampled,
-    x = x_resampled,
-    y = y_resampled
-  )
+  dplyr::tibble(trial_id = trialidx,
+                administration_id = adidx,
+                t = t_resampled,
+                x = x_resampled,
+                y = y_resampled
+              )
 }
 
 
@@ -98,13 +123,14 @@ resample_xy_trial <- function(df_trial) {
 #' dir_datasets <- "testdataset" # local datasets dir
 #' lab_dataset_id <- "pomper_saffran_2016"
 #' dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
+#' table_type <- "aoi_timepoints"
+#' file_csv <- file.path(dir_csv, paste0(table_type, '.csv'))
 #' df_table <- utils::read.csv(file_csv)
-#' resample_times(dir_csv, table_type = "aoi_timepoints")
+#' df_resampled <- resample_times(df_table, table_type = "aoi_timepoints")
 #' }
 #'
 #' @export
 resample_times <- function(df_table, table_type, file_ext = '.csv') {
-
   if (table_type == "aoi_timepoints") {
     df_out <- df_table %>%
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
@@ -115,11 +141,11 @@ resample_times <- function(df_table, table_type, file_ext = '.csv') {
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
       map_df(resample_xy_trial)
-
   }
 
   # write the resampled df into a new csv
-  readr::write_csv(pdf_out, path = paste0(dir_csv, file_resampled))
+  #readr::write_csv(pdf_out, path = paste0(dir_csv, file_resampled))
+  return(df_out)
 }
 
 #' Normalize time by the onset
