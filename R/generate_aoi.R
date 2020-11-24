@@ -31,7 +31,11 @@ demo_resample <- function() {
   tictoc::toc()
 }
 
-# key function
+# key private function to do resampling of aois within a single trial
+# uses approxfun to resample
+# because missingness is coded as an integer and interpolation is "constant" then
+# no "gaps" between AOIs are filled. actually interpolating across blinks is left
+# for a different function as this is a theory-laden decision.
 resample_aoi_trial <- function(df_trial) {
   t_origin <- df_trial$t_norm
   data_origin <- df_trial$aoi
@@ -46,7 +50,6 @@ resample_aoi_trial <- function(df_trial) {
   data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
 
   # start resampling with approxfun
-  # note that there is no max gap here
   f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
   data_resampled <- f(t_resampled) %>%
     dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
@@ -58,8 +61,8 @@ resample_aoi_trial <- function(df_trial) {
                 administration_id = adidx)
 }
 
-# private function to do resampling of xy trials
-# not tested or refactored yet
+# key private function to do resampling of aois within a single trial
+# uses approxfun to resample
 resample_xy_trial <- function(df_trial) {
   t_origin <- df_trial$t
   x_origin <- df_trial$x
