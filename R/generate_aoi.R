@@ -31,7 +31,11 @@ demo_resample <- function() {
   tictoc::toc()
 }
 
-# key function
+# key private function to do resampling of aois within a single trial
+# uses approxfun to resample
+# because missingness is coded as an integer and interpolation is "constant" then
+# no "gaps" between AOIs are filled. actually interpolating across blinks is left
+# for a different function as this is a theory-laden decision.
 resample_aoi_trial <- function(df_trial) {
   t_origin <- df_trial$t_norm
   data_origin <- df_trial$aoi
@@ -46,7 +50,6 @@ resample_aoi_trial <- function(df_trial) {
   data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
 
   # start resampling with approxfun
-  # note that there is no max gap here
   f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
   data_resampled <- f(t_resampled) %>%
     dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
@@ -58,48 +61,36 @@ resample_aoi_trial <- function(df_trial) {
                 administration_id = adidx)
 }
 
-# private function to do resampling of xy trials
-# not tested or refactored yet
+# key private function to do resampling of aois within a single trial
+# uses approxfun to resample
 resample_xy_trial <- function(df_trial) {
+  MISSING_CONST <- -10000
   t_origin <- df_trial$t
   x_origin <- df_trial$x
   y_origin <- df_trial$y
-
-  trialidx <- df_trial$trial_id[1]
-  adidx <- df_trial$administration_id[1]
 
   # create the new timestamps for resampling
   t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
   t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
 
-  if (sum(is.na(x_origin)) == length(x_origin) || sum(is.na(y_origin)) == length(y_origin)) {
-    # if xy only have na data
-    x_resampled <- rep(NA, length(t_resampled))
-    y_resampled <- rep(NA, length(t_resampled))
-  } else {
-    # start resampling with approxfun
-    if (sum(is.na(x_origin)) == (length(x_origin)-1)) {
-      fx <- approxfun(t_origin, x_origin, method = "constant")
-    } else {
-      fx <- approxfun(t_origin, x_origin, method = "linear")
-    }
-    x_resampled <- fx(t_resampled)
+  # because of the behavior of approxfun, we need numerical values for missingness
+  x_origin[is.na(x_origin)] <- MISSING_CONST
+  y_origin[is.na(y_origin)] <- MISSING_CONST
 
-    if (sum(is.na(y_origin)) == (length(y_origin)-1)) {
-      fy <- approxfun(t_origin, y_origin, method = "constant")
-    } else {
-      fy <- approxfun(t_origin, y_origin, method = "linear")
-    }
-    y_resampled <- fy(t_resampled)
-  }
+  # resample
+  x_resampled <- approx(x = t_origin, y = x_origin, xout = t_resampled, method = "constant")
+  y_resampled <- approx(x = t_origin, y = y_origin, xout = t_resampled, method = "constant")
+
+  # replace missing values
+  x_resampled[x_resampled == MISSING_CONST] <- NA
+  y_resampled[y_resampled == MISSING_CONST] <- NA
 
   # adding back the columns to match schema
-  dplyr::tibble(trial_id = trialidx,
-                administration_id = adidx,
+  dplyr::tibble(trial_id = df_trial$trial_id[1],
+                administration_id = df_trial$administration_id[1],
                 t = t_resampled,
                 x = x_resampled,
-                y = y_resampled
-              )
+                y = y_resampled)
 }
 
 
