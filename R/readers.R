@@ -52,9 +52,11 @@ list_ds_tables <- function(coding_method = "eyetracking") {
   # fetching json choices for the "coding_method"
 
   if (coding_method == "eyetracking" | coding_method == "automated gaze coding") {
-    table_list <- c("subjects", "administrations", "trials", "datasets", "xy_timepoints", "aoi_timepoints", "aoi_region_sets", "stimuli")
+    table_list <- c("subjects", "administrations", "trials",
+                    "trial_types", "datasets", "xy_timepoints", "aoi_timepoints", "aoi_region_sets", "stimuli")
   } else if (coding_method == "manual gaze coding") {
-    table_list <- c("subjects", "administrations", "trials", "datasets","aoi_timepoints", "stimuli")
+    table_list <- c("subjects", "administrations", "trials", "trial_types",
+                    "datasets", "aoi_timepoints", "stimuli")
   } else {
     stop("Invalid coding method type! The type can only be one of the following: ",
          paste0(methods_json, collapse = ", "), ".")

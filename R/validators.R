@@ -344,14 +344,14 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
       df_table <- utils::read.csv(file_csv)
       msg_error <- validate_table(df_table, table_type)
       if (!is.null(msg_error)) {
-        warning("The processed data file '", table_type,
-                "' failed to pass the validator for database import with these error messsages:", msg_error)
+        warning("The processed data file", table_type,
+                "failed to pass the validator for database import with these error messsages:", msg_error)
         msg_error_all <- c(msg_error_all, msg_error)
       } else {
-        print(paste("The processed data file ", table_type, "passed the validator!"))
+        print(paste("The processed data file", table_type, "passed the validator!"))
       }
     } else if (is_table_required(table_type, coding_method)){
-      warning("Cannot find required file: ", file_csv)
+      warning("Cannot find required file:", file_csv)
     }
   }
   return(msg_error_all)
