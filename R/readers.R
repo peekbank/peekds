@@ -307,6 +307,33 @@ process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = 
     } # no else error message, because that will be handled by validator.R
   }
 
+  ######## TRIAL TYPES ########
+  table_type <- "trial_types"
+  if (is_table_required(table_type, dataset_type)) {
+    # find the trial file under dir_raw
+    file_trial_types <- list.files(path = dir_raw,
+                              pattern = '*trial_type*',
+                              all.files = FALSE)
+    if (length(file_trials) != 0) {
+      file_trials <- file.path(dir_raw, file_trials)
+      has_trial_type_info <- file.exists(file_trials)
+    } else {
+      has_trial_type_info = FALSE
+    }
+    if (has_trial_type_info) {
+      df_trials <- utils::read.table(file_trial_types, header = TRUE, sep = "")
+      trial_id <- seq(0, (nrow(df_trials)-1))
+      df_trials[["trial_id"]] <- c(trial_id)
+    } else {
+      stop("Cannot find trial_type file ", file_trial_type, ".")
+    }
+
+    # validate against json, if valid, then save csv
+    if (validate_table(df_trials, table_type)) {
+      save_table(df_trials, table_type)
+    } # no else error message, because that will be handled by validator.R
+  }
+
   ######## SUBJECTS ########
   table_type <- "subjects"
   if (is_table_required(table_type, dataset_type)) {
