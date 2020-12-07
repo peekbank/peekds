@@ -58,8 +58,8 @@ resample_xy_trial <- function(df_trial) {
   y_origin[is.na(y_origin)] <- MISSING_CONST
 
   # resample
-  x_resampled <- approx(x = t_origin, y = x_origin, xout = t_resampled, method = "constant")
-  y_resampled <- approx(x = t_origin, y = y_origin, xout = t_resampled, method = "constant")
+  x_resampled <- approx(x = t_origin, y = x_origin, xout = t_resampled, method = "constant")$y
+  y_resampled <- approx(x = t_origin, y = y_origin, xout = t_resampled, method = "constant")$y
 
   # replace missing values
   x_resampled[x_resampled == MISSING_CONST] <- NA
@@ -75,16 +75,22 @@ resample_xy_trial <- function(df_trial) {
 
 
 #' This function resample times to be consistent across labs.
+#'
 #' Resampling is done by the following steps:
+#'
 #' 1. iterate through every trial for every administration
+#'
 #' 2. create desired timepoint sequence with equal spacing according to pre-specified SAMPLE_RATE parameter
+#'
 #' 3. use approxfun to interpolate given data points to align with desired timepoint sequence
 #'     "constant" interpolation method is used for AOI timepoints;
 #'     "linear" interpolation method is used for xy timepoints;
 #'     for more details on approxfun, please see: https://stat.ethz.ch/R-manual/R-devel/library/stats/html/approxfun.html
+#'
 #' 4. after resampling, bind resampled dataframes back together and re-assign aoi_timepoint_id
 #'
 #' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
+#'
 #' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
 #'
 #' @return df_out with resampled time, xy or aoi value rows
@@ -101,7 +107,7 @@ resample_xy_trial <- function(df_trial) {
 #' }
 #'
 #' @export
-resample_times <- function(df_table, table_type, file_ext = '.csv') {
+resample_times <- function(df_table, table_type) {
   if (table_type == "aoi_timepoints") {
     df_out <- df_table %>%
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
