@@ -2,16 +2,45 @@
 % Please edit documentation in R/generate_aoi.R
 \name{resample_times}
 \alias{resample_times}
-\title{Resample times to be consistent across labs}
+\title{This function resample times to be consistent across labs.
+Resampling is done by the following steps:
+1. iterate through every trial for every administration
+2. create desired timepoint sequence with equal spacing according to pre-specified SAMPLE_RATE parameter
+3. use approxfun to interpolate given data points to align with desired timepoint sequence
+    "constant" interpolation method is used for AOI timepoints;
+    "linear" interpolation method is used for xy timepoints;
+    for more details on approxfun, please see: https://stat.ethz.ch/R-manual/R-devel/library/stats/html/approxfun.html
+4. after resampling, bind resampled dataframes back together and re-assign aoi_timepoint_id}
 \usage{
-resample_times(df)
+resample_times(df_table, table_type, file_ext = ".csv")
 }
 \arguments{
-\item{dir}{df that has subject_id, dataset_id, trial_id and times}
+\item{df_table}{to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id}
+
+\item{table_type}{table name, can only be "aoi_timepoints" or "xy_timepoints"}
 }
 \value{
+df_out with resampled time, xy or aoi value rows
 
+#' @examples
+\dontrun{
+dir_datasets <- "testdataset" # local datasets dir
+lab_dataset_id <- "pomper_saffran_2016"
+dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
+table_type <- "aoi_timepoints"
+file_csv <- file.path(dir_csv, paste0(table_type, '.csv'))
+df_table <- utils::read.csv(file_csv)
+df_resampled <- resample_times(df_table, table_type = "aoi_timepoints")
+}
 }
 \description{
-Resample times to be consistent across labs
+This function resample times to be consistent across labs.
+Resampling is done by the following steps:
+1. iterate through every trial for every administration
+2. create desired timepoint sequence with equal spacing according to pre-specified SAMPLE_RATE parameter
+3. use approxfun to interpolate given data points to align with desired timepoint sequence
+    "constant" interpolation method is used for AOI timepoints;
+    "linear" interpolation method is used for xy timepoints;
+    for more details on approxfun, please see: https://stat.ethz.ch/R-manual/R-devel/library/stats/html/approxfun.html
+4. after resampling, bind resampled dataframes back together and re-assign aoi_timepoint_id
 }

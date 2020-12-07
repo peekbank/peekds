@@ -3,7 +3,6 @@
 export(add_aois)
 export(center_times)
 export(create_emtpy_table)
-export(generate_aoi)
 export(get_json_fields)
 export(get_peekjson)
 export(get_processed_data)
