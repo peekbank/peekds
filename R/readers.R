@@ -315,8 +315,8 @@ process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = 
                               pattern = '*trial_type*',
                               all.files = FALSE)
     if (length(file_trials) != 0) {
-      file_trials <- file.path(dir_raw, file_trials)
-      has_trial_type_info <- file.exists(file_trials)
+      file_trials <- file.path(dir_raw, file_trial_types)
+      has_trial_type_info <- file.exists(file_trial_types)
     } else {
       has_trial_type_info = FALSE
     }
@@ -325,7 +325,7 @@ process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = 
       trial_id <- seq(0, (nrow(df_trials)-1))
       df_trials[["trial_id"]] <- c(trial_id)
     } else {
-      stop("Cannot find trial_type file ", file_trial_type, ".")
+      stop("Cannot find trial_type file ", file_trial_types, ".")
     }
 
     # validate against json, if valid, then save csv
