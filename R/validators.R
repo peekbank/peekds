@@ -96,60 +96,6 @@ demo_vis <- function() {
   }
 }
 
-#' parse json file from peekbank github into a dataframe
-#'
-#' @return peekjson -- the organized dataframe from json file
-#'
-#' @examples
-#' \dontrun{
-#' peekjson <- get_peekjson()
-#' }
-#'
-#' @export
-get_peekjson <- function() {
-  url_json <- "https://raw.githubusercontent.com/langcog/peekbank/master/static/peekbank-schema.json"
-  peekjson <- jsonlite::fromJSON(url(url_json))
-  return(peekjson)
-}
-
-#' Fetching the list of field names and requirements in each table according to the peekds json file
-#'
-#' @param table_type the type of table, can be one of the following types:
-#'                   aoi_timepoints, aoi_region_sets, administrations, subjects, trials, datasets, stimuli
-#'
-#' @return fieldnames -- the list of field names
-#'
-#' @examples
-#' \dontrun{
-#' fields_json <- get_json_fields(table_type = "aoi_timepoints")
-#' }
-#'
-#' @export
-get_json_fields <- function(table_type) {
-  # get json file from github
-  peekjson <- get_peekjson()
-  # fetch the table listb =
-  table_list <- as.vector(peekjson[, "table"])
-
-  # check if the input table_type is valid
-  if (!(table_type %in% table_list)) {
-    warning("Cannot recognize the table type ", table_type, ".")
-    return(NULL)
-  }
-
-  # get the list of column names in json
-  fields_json <-
-    peekjson[which(peekjson$table == table_type), "fields"]
-  fields_json <- fields_json[[1]]
-
-  # add "_id" to all the foreign key field names
-  # e.g. subject -> subject_id
-  # mask_fkey <- fields_json$field_class == "ForeignKey"
-  # colnames_json[mask_fkey] <- paste0(colnames_json[mask _fkey], "_id")
-  return(fields_json)
-}
-
-
 #' check the peekbank_column_info csv files against database schema
 #'
 #' @param path_csv the directory of csv file 'peekbank_column_info.csv'
