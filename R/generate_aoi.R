@@ -10,27 +10,6 @@ pkg_globals$SAMPLE_DURATION <- 1000/pkg_globals$SAMPLE_RATE
 pkg_globals$MAX_GAP_LENGTH <- .100 # S
 pkg_globals$MAX_GAP_SAMPLES <- pkg_globals$MAX_GAP_LENGTH / (1/pkg_globals$SAMPLE_RATE)
 
-# demo function later to be deleted
-demo_resample <- function() {
-  # after clean and rebuild
-  library(dplyr)
-  library(magrittr)
-  library(purrr)
-  datasets <- get_datasets()
-  lab_dataset_id <- "pomper_saffran_2016"
-  dir.create(file.path(dir_datasets, lab_dataset_id))
-  dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
-
-  file_ext <- '.csv'
-  table_type <- "aoi_timepoints"
-  file_csv = file.path(dir_csv, paste0(table_type, file_ext))
-  df_table <- utils::read.csv(file_csv)
-
-  tictoc::tic()
-  df_resampled <- resample_times(df_table, table_type = "aoi_timepoints")
-  tictoc::toc()
-}
-
 # key private function to do resampling of aois within a single trial
 # uses approxfun to resample
 # because missingness is coded as an integer and interpolation is "constant" then
@@ -65,6 +44,7 @@ resample_aoi_trial <- function(df_trial) {
 # uses approxfun to resample
 resample_xy_trial <- function(df_trial) {
   MISSING_CONST <- -10000
+
   t_origin <- df_trial$t
   x_origin <- df_trial$x
   y_origin <- df_trial$y
@@ -204,39 +184,4 @@ round_times <- function(df) {
   tidyr::unnest(.data$data)
 }
 
-
-#' Generate aoi data from xy data
-#'
-#' @param dir Directory with xy data and metadata
-#'
-#' @export
-#' @return
-generate_aoi <- function(dir) {
-  # read in xy_data, trials, aoa_coordinates
-  xy <- readr::read_csv(file.path(dir, "xy_timepoints.csv"))
-  trials <- readr::read_csv(file.path(dir, "trials.csv"))
-  aoi_regions <- readr::read_csv(file.path(dir, "aoi_region_sets.csv"))
-
-  xy_joined <- xy %>%
-    dplyr::left_join(trials, by = "trial_id") %>%
-    dplyr::left_join(aoi_regions, by = "aoi_region_set_id")
-
-  # assign aoa based on aoa_coordinates
-  # find correct aoi based on trials
-  xy_joined <- add_aois(xy_joined)
-
-  resample_times(xy_joined) %>%
-    dplyr::select(dataset_id, administration_id, trial_id, t_zeroed, aoi) %>%
-    dplyr::rename(t_norm = t_zeroed) %>%
-    dplyr::group_by(dataset_id, administration_id, trial_id, t_norm) %>%
-    dplyr::summarise(aoi = na_mode(aoi)) %>%
-    dplyr::ungroup() %>%
-    dplyr::group_by(dataset_id, administration_id, trial_id) %>%
-    dplyr::mutate(aoi = zoo::na.locf(aoi,
-                                     maxgap = pkg_globals$MAX_GAP_SAMPLES,
-                                     na.rm=FALSE)) %>%  # last observation carried forward
-    dplyr::ungroup() %>%
-    dplyr::mutate(aoi_timepoint_id = 0:(dplyr::n() - 1)) %>%
-    dplyr::select(-dataset_id)
-}
 
