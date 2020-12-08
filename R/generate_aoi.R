@@ -66,7 +66,7 @@ resample_xy_trial <- function(df_trial) {
   y_resampled[y_resampled == MISSING_CONST] <- NA
 
   # adding back the columns to match schema
-  dplyr::tibble(xy_timepoint_id = (1:nrow(t_resampled)) - 1, # add IDs
+  dplyr::tibble(xy_timepoint_id = (1:length(t_resampled)) - 1, # add IDs
                 trial_id = df_trial$trial_id[1],
                 administration_id = df_trial$administration_id[1],
                 t = t_resampled,
