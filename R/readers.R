@@ -94,7 +94,7 @@ list_ds_tables <- function(coding_method = "eyetracking") {
 list_coding_methods <- function() {
   fields_json <- get_json_fields(table_type = "administrations")
   methods_json <- fields_json$options[fields_json$field_name == "coding_method", "choices"] %>%
-    purrr::flatten() %>%
+    unlist() %>%
     unique()
   return(methods_json)
 }
