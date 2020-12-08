@@ -66,6 +66,7 @@ resample_xy_trial <- function(df_trial) {
   y_resampled[y_resampled == MISSING_CONST] <- NA
 
   # adding back the columns to match schema
+  # note, no IDs here because they won't be unique.
   dplyr::tibble(trial_id = df_trial$trial_id[1],
                 administration_id = df_trial$administration_id[1],
                 t = t_resampled,
@@ -112,12 +113,14 @@ resample_times <- function(df_table, table_type) {
     df_out <- df_table %>%
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
-      map_df(resample_aoi_trial)
+      map_df(resample_aoi_trial) %>%
+      mutate(aoi_timepoint_id = 0:(n() - 1)) # add IDs
   } else if (table_type == "xy_timepoints") {
     df_out <- df_table %>%
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
-      map_df(resample_xy_trial)
+      map_df(resample_xy_trial) %>%
+      mutate(xy_timepoint_id = 0:(n() - 1)) # add IDs
   }
 
   # write the resampled df into a new csv
