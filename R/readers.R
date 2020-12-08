@@ -133,7 +133,7 @@ list_language_choices <- function() {
   fields_json <- get_json_fields(table_type = "trial_types")
   idx <- match("full_phrase_language", fields_json$field_name)
   fieldoptions <- fields_json$options[idx, ]
-  language_list <- unique(purrr::flatten(fieldoptions$choices))
+  language_list <- unique(purrr::unlist(fieldoptions$choices))
 
   return(language_list)
 }
