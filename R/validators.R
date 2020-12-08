@@ -16,11 +16,14 @@ demo_validator <- function() {
   dir.create(file.path(dir_datasets, lab_dataset_id))
   dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
   file_ext <- '.csv'
-  #get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
+  # get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
 
   # "subjects"        "trial_types"     "trials"          "stimuli"
   msg_error_all <- validate_for_db_import(dir_csv)
-  table_type <- "trial_types"
+  table_type <- "subjects"
+  file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
+  df_table <- utils::read.csv(file_csv)
+  validate_table(df_table, table_type)
 }
 
 # demo function for running visualization check
@@ -178,7 +181,7 @@ validate_table <- function(df_table, table_type) {
 
     # step 0: check if this is a required field
     if (is_field_required) {
-      msg_new <- paste("\n\t-\tCannot locate required field: ", fieldname,
+      msg_new <- paste("\n\t-\tCannot locate required field:", fieldname,
            ". Please add the column into the ", table_type, "processed data file.")
       msg_error <- c(msg_error, msg_new)
       next()
@@ -193,7 +196,7 @@ validate_table <- function(df_table, table_type) {
       }
       is_unique <- length(content_tb) == length(unique(content_tb))
       if (!is_unique) {
-        msg_new <- paste("\n\t-\tThe values in field ", fieldname, "are not unique.")
+        msg_new <- paste("\n\t-\tThe values in field", fieldname, "are not unique.")
         msg_error <- c(msg_error, msg_new)
       }
       if(sum(is.na(content_tb)) > 0) {
@@ -206,14 +209,14 @@ validate_table <- function(df_table, table_type) {
     if (!fieldoptions$null & fieldclass == "IntegerField") {
       is_type_valid <- is.integer(content_tb)
       if (!is_type_valid) {
-        msg_new <- paste("\n\t-\t ", fieldname, " should contain integers only.")
+        msg_new <- paste("\n\t-\t", fieldname, " should contain integers only.")
         msg_error <- c(msg_error, msg_new)
       }
     } else if (!fieldoptions$null & fieldclass == "CharField") {
       # numbers are allowed here as well since numbers can be converted into chars
       is_type_valid <- is.character(content_tb) | (typeof(content_tb) == "integer")
       if (!is_type_valid) {
-        msg_new <- paste("\n\t-\tField ", fieldname, " should contain characters only.")
+        msg_new <- paste("\n\t-\tField", fieldname, "should contain characters only.")
         msg_error <- c(msg_error, msg_new)
       }
     } else {
@@ -223,13 +226,13 @@ validate_table <- function(df_table, table_type) {
 
     # step 3: if word/label choices are required, check if the values are valid
     if ("choices" %in% colnames(fieldoptions)) {
-      choices_json <- unique(purrr::flatten(fieldoptions$choices))
+      choices_json <- unique(unlist(fieldoptions$choices))
 
-      if (is_type_valid & length(choices_json) > 0) {
+      if (is_type_valid & (length(choices_json) > 0)) {
         is_value_valid <- all(unique(content_tb) %in% choices_json)
         if (!is_value_valid) {
-          msg_new <- paste("\n\t-\tField ", fieldname, " should contain the following values only: ",
-                           paste(unlist(choices_json), collapse=', '), ".")
+          msg_new <- paste("\n\t-\tField", fieldname, "should contain the following values only: ",
+                           paste(choices_json, collapse=', '), ".")
           msg_error <- c(msg_error, msg_new)
         }
       }
@@ -240,28 +243,33 @@ validate_table <- function(df_table, table_type) {
     if (table_type == "aoi_timepoints") {
       remainder <- unique(df_table$t_norm %% pkg_globals$SAMPLE_DURATION)
       if (remainder != 0) {
-        msg_new <- paste("\n\t-\tField t_norm in table ", table_type, " is not sampled at 40HZ.")
+        msg_new <- paste("\n\t-\tField t_norm in table", table_type, "is not sampled at 40HZ.")
         msg_error <- c(msg_error, msg_new)
       }
     }
     if (table_type == "xy_timepoints") {
       remainder <- unique(df_table$t %% pkg_globals$SAMPLE_DURATION)
       if (remainder != 0) {
-        msg_new <- paste("\n\t-\tField t in table ", table_type, " is not sampled at 40HZ.")
+        msg_new <- paste("\n\t-\tField t in table", table_type, "is not sampled at 40HZ.")
         msg_error <- c(msg_error, msg_new)
       }
     }
 
     # STEP 4.2:
     # if subjects table, then check if native_language field was entered correctly
-    if (table_type == "subjects") {
+    if (table_type == "subjects" && fieldname == "native_language") {
       language_list <- list_language_choices()
-      sub_native <- unique(df_table["native_language"])
-      is_allowed <- sub_native %in% language_list
 
-      if (!all(is_allowed)) {
-        msg_new <- paste("\n\t-\tThe native languages of subjects ", sub_native[!is_allowed],
-                         " do not belong in the allowed language list in json. Please see function list_language_choices().")
+      # go through every native language in the subjects table, check if all the langauge codes are in the allowed list from json file
+      invalid_languages <- df_table %>%
+        mutate(row_number = 1:n(),
+               valid_language = map_lgl(native_language,
+                                        function(lang) all(str_split(lang, ", ")[[1]] %in% language_list))) %>%
+        filter(!valid_language)
+
+      if (nrow(invalid_languages) != 0) {
+        msg_new <- paste("\n\t-\tThe subjects' native languages in the following entry row(s)", invalid_languages$row_number,
+                         "do not belong in the allowed language list in json. Please see function list_language_choices().")
         msg_error <- c(msg_error, msg_new)
       }
     }
@@ -303,7 +311,7 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
   msg_error_all <- c()
 
   for (table_type in table_list) {
-    file_csv = file.path(dir_csv, paste0(table_type, file_ext))
+    file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
     if (file.exists(file_csv)) {
       # read in csv file and check if the data is valid
       df_table <- utils::read.csv(file_csv)
@@ -313,7 +321,7 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
                 " failed to pass the validator for database import with these error messsages:", msg_error)
         msg_error_all <- c(msg_error_all, msg_error)
       } else {
-        print(paste("The processed data file ", table_type, " passed the validator!"))
+        print(paste("The processed data file", table_type, "passed the validator!"))
       }
     } else if (is_table_required(table_type, coding_method)){
       warning("Cannot find required file: ", file_csv)
