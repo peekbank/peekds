@@ -257,7 +257,6 @@ validate_table <- function(df_table, table_type) {
     if (table_type == "subjects") {
       language_list <- list_language_choices()
       sub_native <- unique(df_table["native_language"])
-      sub_native <- c("eng", "aa8")
       is_allowed <- sub_native %in% language_list
 
       if (!all(is_allowed)) {
@@ -265,7 +264,7 @@ validate_table <- function(df_table, table_type) {
                          " do not belong in the allowed language list in json. Please see function list_language_choices().")
         msg_error <- c(msg_error, msg_new)
       }
-
+    }
   }
 
   return(msg_error)
@@ -309,7 +308,7 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
     if (file.exists(file_csv)) {
       # read in csv file and check if the data is valid
       df_table <- utils::read.csv(file_csv)
-      msg_error <- validate_table(df_table, table_type)
+      dfmsg_error <- validate_table(df_table, table_type)
       if (!is.null(msg_error)) {
         warning("The processed data file", table_type,
                 "failed to pass the validator for database import with these error messsages:", msg_error)
