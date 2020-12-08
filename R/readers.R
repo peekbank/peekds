@@ -56,6 +56,37 @@ get_json_fields <- function(table_type) {
   return(fields_json)
 }
 
+#' List the tables required for datasets with different coding method
+#'
+#' @param dataset_type character
+#'
+#' @return table_list
+#'
+#' @examples
+#' \dontrun{
+#' table_list <- list_ds_tables(coding_method = "manual gaze coding")
+#' }
+#'
+#' @export
+list_ds_tables <- function(coding_method = "eyetracking") {
+  # get json file from github
+  peekjson <- get_peekjson()
+  table_list <- peekjson$table
+  table_list_auto <- table_list[table_list != 'admin']
+
+  table_list_manual <- table_list_auto[table_list_auto %in% c("xy_timepoints", "aoi_region_sets") == FALSE]
+
+  if (coding_method == "eyetracking" | coding_method == "automated gaze coding") {
+    table_list <- table_list_auto
+  } else if (coding_method == "manual gaze coding") {
+    table_list <- table_list_manual
+  } else {
+    stop("Invalid coding method type! The type can only be one of the following: ",
+         paste0(methods_json, collapse = ", "), ".")
+  }
+  return(table_list)
+}
+
 #' Get coding method list from json file
 #'
 #' @return
@@ -85,35 +116,6 @@ is_table_required <- function(table_type, coding_method) {
   table_list <- list_ds_tables(coding_method)
   is_required <- table_type %in% table_list
   return(is_required)
-}
-
-#' List the tables required for datasets with different coding method
-#'
-#' @param dataset_type character
-#'
-#' @return table_list
-#'
-#' @examples
-#' \dontrun{
-#' table_list <- list_ds_tables(coding_method = "manual gaze coding")
-#' }
-#'
-#' @export
-list_ds_tables <- function(coding_method = "eyetracking") {
-  # get json file from github
-  peekjson <- get_peekjson()
-  table_list_auto <- peekjson$table
-  table_list_manual <- table_list_auto[table_list_auto %in% c("xy_timepoints", "aoi_region_sets") == FALSE]
-
-  if (coding_method == "eyetracking" | coding_method == "automated gaze coding") {
-    table_list <- table_list_auto
-  } else if (coding_method == "manual gaze coding") {
-    table_list <- table_list_manual
-  } else {
-    stop("Invalid coding method type! The type can only be one of the following: ",
-         paste0(methods_json, collapse = ", "), ".")
-  }
-  return(table_list)
 }
 
 #' List current allowed language choices for db import

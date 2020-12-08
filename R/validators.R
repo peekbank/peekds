@@ -4,11 +4,11 @@ NULL
 # demo function for running validator
 demo_validator <- function() {
   # check for xy_data, trials, aoa_coordinates
-  #rm(list = ls())
   library(peekbankr)
   library(dplyr)
   library(ggplot2)
   library(ggthemes)
+
   #setwd("")
   datasets <- get_datasets()
   dir_datasets <- "testdataset" # local datasets dir
@@ -20,7 +20,7 @@ demo_validator <- function() {
 
   # "subjects"        "trial_types"     "trials"          "stimuli"
   msg_error_all <- validate_for_db_import(dir_csv)
-  table_type <- "subjects"
+  table_type <- "trial_types"
 }
 
 # demo function for running visualization check
@@ -174,10 +174,10 @@ validate_table <- function(df_table, table_type) {
 
     idx_tb <- match(fieldname, colnames_table)
     is_primary <- isTRUE(fieldoptions$primary_key)
-    is_field_required <- is_primary | !fieldoptions$null
+    is_field_required <- is.na(idx_tb)
 
     # step 0: check if this is a required field
-    if (is_field_required & is.na(idx_tb)) {
+    if (is_field_required) {
       msg_new <- paste("\n\t-\tCannot locate required field: ", fieldname,
            ". Please add the column into the ", table_type, "processed data file.")
       msg_error <- c(msg_error, msg_new)
@@ -297,8 +297,7 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
   }
 
   # fetch the table list
-  table_list <- peekjson$table
-  table_list <- table_list[table_list != 'admin']
+  table_list <- list_ds_tables(coding_method)
   # admin table is not required
   # table_list <- table_list[table_list != "admin"];
   msg_error_all <- c()
@@ -308,16 +307,16 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
     if (file.exists(file_csv)) {
       # read in csv file and check if the data is valid
       df_table <- utils::read.csv(file_csv)
-      dfmsg_error <- validate_table(df_table, table_type)
+      msg_error <- validate_table(df_table, table_type)
       if (!is.null(msg_error)) {
-        warning("The processed data file", table_type,
-                "failed to pass the validator for database import with these error messsages:", msg_error)
+        warning("The processed data file ", table_type,
+                " failed to pass the validator for database import with these error messsages:", msg_error)
         msg_error_all <- c(msg_error_all, msg_error)
       } else {
-        print(paste("The processed data file", table_type, "passed the validator!"))
+        print(paste("The processed data file ", table_type, " passed the validator!"))
       }
     } else if (is_table_required(table_type, coding_method)){
-      warning("Cannot find required file:", file_csv)
+      warning("Cannot find required file: ", file_csv)
     }
   }
   return(msg_error_all)
