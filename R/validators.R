@@ -11,11 +11,16 @@ demo_validator <- function() {
   library(ggthemes)
   #setwd("")
   datasets <- get_datasets()
-  lab_dataset_id <- "reflook_v3"
+  dir_datasets <- "testdataset" # local datasets dir
+  lab_dataset_id <- "reflook_v1"
   dir.create(file.path(dir_datasets, lab_dataset_id))
-  dir_csv = file.path(dir_datasets, lab_dataset_id, "processed_data")
-  get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
+  dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
+  file_ext <- '.csv'
+  #get_processed_data(lab_dataset_id, path = dir_csv, osf_address = "pr6wu") # if you dont have the most updated version of processed_data
+
+  # "subjects"        "trial_types"     "trials"          "stimuli"
   msg_error_all <- validate_for_db_import(dir_csv)
+  table_type <- "subjects"
 }
 
 # demo function for running visualization check
@@ -230,6 +235,7 @@ validate_table <- function(df_table, table_type) {
       }
     }
 
+    # STEP 4.1:
     # if aoi/xy_timepoints table, then check if resampling was done
     if (table_type == "aoi_timepoints") {
       remainder <- unique(df_table$t_norm %% pkg_globals$SAMPLE_DURATION)
@@ -245,6 +251,21 @@ validate_table <- function(df_table, table_type) {
         msg_error <- c(msg_error, msg_new)
       }
     }
+
+    # STEP 4.2:
+    # if subjects table, then check if native_language field was entered correctly
+    if (table_type == "subjects") {
+      language_list <- list_language_choices()
+      sub_native <- unique(df_table["native_language"])
+      sub_native <- c("eng", "aa8")
+      is_allowed <- sub_native %in% language_list
+
+      if (!all(is_allowed)) {
+        msg_new <- paste("\n\t-\tThe native languages of subjects ", sub_native[!is_allowed],
+                         " do not belong in the allowed language list in json. Please see function list_language_choices().")
+        msg_error <- c(msg_error, msg_new)
+      }
+
   }
 
   return(msg_error)

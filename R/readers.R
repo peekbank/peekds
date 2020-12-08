@@ -91,7 +91,7 @@ is_table_required <- function(table_type, coding_method) {
 #'
 #' @param dataset_type character
 #'
-#' @return
+#' @return table_list
 #'
 #' @examples
 #' \dontrun{
@@ -114,6 +114,26 @@ list_ds_tables <- function(coding_method = "eyetracking") {
          paste0(methods_json, collapse = ", "), ".")
   }
   return(table_list)
+}
+
+#' List current allowed language choices for db import
+#'
+#' @return language_list
+#'
+#' @examples
+#' \dontrun{
+#' language_list <- list_language_choices()
+#' }
+#'
+#' @export
+list_language_choices <- function() {
+  # get json file from github
+  fields_json <- get_json_fields(table_type = "trial_types")
+  idx <- match("full_phrase_language", fields_json$field_name)
+  fieldoptions <- fields_json$options[idx, ]
+  language_list <- unique(purrr::flatten(fieldoptions$choices))
+
+  return(language_list)
 }
 
 #' Function for map raw data columns to processed table columns
