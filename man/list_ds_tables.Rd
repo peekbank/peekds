@@ -10,7 +10,7 @@ list_ds_tables(coding_method = "eyetracking")
 \item{dataset_type}{character}
 }
 \value{
-
+table_list
 }
 \description{
 List the tables required for datasets with different coding method
