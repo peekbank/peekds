@@ -158,14 +158,14 @@ resample_times <- function(df_table, table_type) {
 
 #' Normalize time by point of disambiguation
 #'
-#' @param df df that has subject_id, dataset_id, trial_id and t
+#' @param df df that has administration_id, trial_id, and t
 #'
 #' @return df_out df that has the normalized times (t_norm)
 #' @export
 center_times <- function(df) {
   # center timestamp (0 POD)
   df_out <- df %>%
-    dplyr::group_by(administration_id, trial_id, dataset_id) %>%
+    dplyr::group_by(administration_id, trial_id) %>%
     dplyr::mutate(t_norm = (t - t[1]) - point_of_disambiguation) %>%
     dplyr::select(-t)
   return(df_out)
