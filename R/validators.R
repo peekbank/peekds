@@ -145,9 +145,9 @@ validate_table <- function(df_table, table_type) {
       }
     }
     if (table_type == "xy_timepoints") {
-      remainder <- unique(df_table$t %% pkg_globals$SAMPLE_DURATION)
+      remainder <- unique(df_table$t_norm %% pkg_globals$SAMPLE_DURATION)
       if (remainder != 0) {
-        msg_new <- paste("\n\t-\tField t in table", table_type, "is not sampled at 40HZ.")
+        msg_new <- paste("\n\t-\tField t_norm in table", table_type, "is not sampled at 40HZ.")
         msg_error <- c(msg_error, msg_new)
       }
     }
