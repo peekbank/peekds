@@ -16,7 +16,7 @@ pkg_globals$MAX_GAP_SAMPLES <- pkg_globals$MAX_GAP_LENGTH / (1/pkg_globals$SAMPL
 # no "gaps" between AOIs are filled. actually interpolating across blinks is left
 # for a different function as this is a theory-laden decision.
 resample_aoi_trial <- function(df_trial) {
-  t_origin <- df_trial$t_norm
+  t_origin <- df_trial$t
   data_origin <- df_trial$aoi
   trialidx <- df_trial$trial_id[1]
   adidx <- df_trial$administration_id[1]
@@ -29,12 +29,12 @@ resample_aoi_trial <- function(df_trial) {
   data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
 
   # start resampling with approxfun
-  f <- approxfun(t_origin, data_num, method = "constant", rule = 2)
+  f <- approxfun(t_origin, data_num, method = "constant", rule = 2, ties = "ordered")
   data_resampled <- f(t_resampled) %>%
     dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
 
   # adding back the columns to match schema
-  dplyr::tibble(t_norm = t_resampled,
+  dplyr::tibble(t = t_resampled,
                 aoi = data_resampled,
                 trial_id = trialidx,
                 administration_id = adidx)
@@ -110,6 +110,14 @@ resample_xy_trial <- function(df_trial) {
 #' @export
 resample_times <- function(df_table, table_type) {
   if (table_type == "aoi_timepoints") {
+    # first check if this dataframe has all the correct columns required for re-sampling
+    required_columns <- c("trial_id", "administration_id", "t", "aoi")
+    if (!all(required_columns %in% colnames(df_table))) {
+      stop(paste("Aoi resampling requires the following columns to be present in the dataframe:",
+                 paste(c("trial_id", "administration_id", "t", "aoi"), collapse = ', ')))
+    }
+
+    # start resampling process by iterating through every trial within every administration
     df_out <- df_table %>%
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
