@@ -16,7 +16,7 @@ pkg_globals$MAX_GAP_SAMPLES <- pkg_globals$MAX_GAP_LENGTH / (1/pkg_globals$SAMPL
 # no "gaps" between AOIs are filled. actually interpolating across blinks is left
 # for a different function as this is a theory-laden decision.
 resample_aoi_trial <- function(df_trial) {
-  t_origin <- df_trial$t
+  t_origin <- df_trial$t_norm
   data_origin <- df_trial$aoi
 
   # create the new timestamps for resampling
@@ -33,7 +33,7 @@ resample_aoi_trial <- function(df_trial) {
     dplyr::recode('1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
 
   # adding back the columns to match schema
-  dplyr::tibble(t = t_resampled,
+  dplyr::tibble(t_norm = t_resampled,
                 aoi = data_resampled,
                 trial_id = df_trial$trial_id[1],
                 administration_id = df_trial$administration_id[1])
@@ -44,7 +44,7 @@ resample_aoi_trial <- function(df_trial) {
 resample_xy_trial <- function(df_trial) {
   MISSING_CONST <- -10000
 
-  t_origin <- df_trial$t
+  t_origin <- df_trial$t_norm
   x_origin <- df_trial$x
   y_origin <- df_trial$y
 
@@ -74,7 +74,7 @@ resample_xy_trial <- function(df_trial) {
   # note, no IDs here because they won't be unique.
   dplyr::tibble(trial_id = df_trial$trial_id[1],
                 administration_id = df_trial$administration_id[1],
-                t = t_resampled,
+                t_norm = t_resampled,
                 x = x_resampled,
                 y = y_resampled)
 }
@@ -101,7 +101,9 @@ resample_xy_trial <- function(df_trial) {
 #'
 #' @return df_out with resampled time, xy or aoi value rows
 #'
-#' #' @examples
+#'
+#' @examples
+#'
 #' \dontrun{
 #' dir_datasets <- "testdataset" # local datasets dir
 #' lab_dataset_id <- "pomper_saffran_2016"
@@ -114,14 +116,29 @@ resample_xy_trial <- function(df_trial) {
 #'
 #' @export
 resample_times <- function(df_table, table_type) {
+
+  # first check if this data frame has all the correct columns required for re-sampling
   if (table_type == "aoi_timepoints") {
-    # first check if this dataframe has all the correct columns required for re-sampling
-    required_columns <- c("trial_id", "administration_id", "t", "aoi")
+    required_columns <- c("trial_id", "administration_id", "t", "aoi", "point_of_disambiguation")
     if (!all(required_columns %in% colnames(df_table))) {
-      stop(paste("Aoi resampling requires the following columns to be present in the dataframe:",
+      stop(paste("AOI resampling requires the following columns to be present in the dataframe:",
                  paste(c("trial_id", "administration_id", "t", "aoi"), collapse = ', ')))
     }
+  } else if (table_type == "xy_timepoints") {
+    required_columns <- c("trial_id", "administration_id", "t", "x", "y", "point_of_disambiguation")
+    if (!all(required_columns %in% colnames(df_table))) {
+      stop(paste("XY resampling requires the following columns to be present in the dataframe:",
+                 paste(c("trial_id", "administration_id", "t", "x","y"), collapse = ', ')))
+    }
+  }
 
+  # center times
+  # this is mandatory, comes from our decision that not linking resampling and
+  # centering causes a lot of problems
+  df_table <- center_times(df_table)
+
+  # main resampling call
+  if (table_type == "aoi_timepoints") {
     # start resampling process by iterating through every trial within every administration
     df_out <- df_table %>%
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
@@ -136,23 +153,21 @@ resample_times <- function(df_table, table_type) {
       mutate(xy_timepoint_id = 0:(n() - 1)) # add IDs
   }
 
-  # write the resampled df into a new csv
-  #readr::write_csv(pdf_out, path = paste0(dir_csv, file_resampled))
   return(df_out)
 }
 
-#' Normalize time by the onset
+#' Normalize time by point of disambiguation
 #'
-#' @param df df that has subject_id, dataset_id, trial_id and times
+#' @param df df that has subject_id, dataset_id, trial_id and t
 #'
-#' @return df_out df that has the normalized times
+#' @return df_out df that has the normalized times (t_norm)
 #' @export
 center_times <- function(df) {
   # center timestamp (0 POD)
   df_out <- df %>%
-    dplyr::group_by(.data$administration_id, .data$trial_id, .data$dataset_id) %>%
-    dplyr::mutate(t_trial = .data$t - .data$t[1],
-                  t_zeroed = .data$t_trial - .data$point_of_disambiguation)
+    dplyr::group_by(administration_id, trial_id, dataset_id) %>%
+    dplyr::mutate(t_norm = (t - t[1]) - point_of_disambiguation) %>%
+    dplyr::select(-t)
   return(df_out)
 }
 
