@@ -120,9 +120,9 @@ resample_times <- function(df_table, table_type) {
 
   # first check if this data frame has all the correct columns required for re-sampling
   if (table_type == "aoi_timepoints") {
-    required_columns <- c("trial_id", "administration_id", "t_norm", "aoi")
+    required_columns <- c("trial_id", "administration_id", "t", "aoi", "point_of_disambiguation")
   } else if (table_type == "xy_timepoints") {
-    required_columns <- c("trial_id", "administration_id", "t_norm", "x", "y")
+    required_columns <- c("trial_id", "administration_id", "t", "x", "y", "point_of_disambiguation")
   }
 
   if (!all(required_columns %in% colnames(df_table))) {
