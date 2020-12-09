@@ -25,16 +25,17 @@ resample_aoi_trial <- function(df_trial) {
 
   # exchange strings values with integers for resampling
   # this step critical for interpolating missing vals quickly and correctly
-  data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
+  aoi_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
 
   # start resampling with approx
-  data_resampled <- approx(x = t_origin, y = data_num, xout = t_resampled,
-                           method = "constant", rule = 2, ties = "ordered") %>%
-    dplyr::recode('1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
+  aoi_resampled <- approx(x = t_origin, y = aoi_num, xout = t_resampled,
+                           method = "constant", rule = 2, ties = "ordered")$y
+  aoi_resampled_recoded <- dplyr::recode(aoi_resampled, '1' = "target", '2' = "distractor",
+                                         '3' = "other", '4' = "missing")
 
   # adding back the columns to match schema
   dplyr::tibble(t_norm = t_resampled,
-                aoi = data_resampled,
+                aoi = aoi_resampled_recoded,
                 trial_id = df_trial$trial_id[1],
                 administration_id = df_trial$administration_id[1])
 }
