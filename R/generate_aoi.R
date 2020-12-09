@@ -18,26 +18,25 @@ pkg_globals$MAX_GAP_SAMPLES <- pkg_globals$MAX_GAP_LENGTH / (1/pkg_globals$SAMPL
 resample_aoi_trial <- function(df_trial) {
   t_origin <- df_trial$t
   data_origin <- df_trial$aoi
-  trialidx <- df_trial$trial_id[1]
-  adidx <- df_trial$administration_id[1]
 
   # create the new timestamps for resampling
   t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
   t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
 
   # exchange strings values with integers for resampling
+  # this step critical for interpolating missing vals quickly and correctly
   data_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
 
-  # start resampling with approxfun
-  f <- approxfun(t_origin, data_num, method = "constant", rule = 2, ties = "ordered")
-  data_resampled <- f(t_resampled) %>%
-    dplyr::recode(., '1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
+  # start resampling with approx
+  data_resampled <- approx(x = t_origin, y = data_num, xout = t_resampled,
+                           method = "constant", rule = 2, ties = "ordered") %>%
+    dplyr::recode('1' = "target", '2' = "distractor", '3' = "other", '4' = "missing")
 
   # adding back the columns to match schema
   dplyr::tibble(t = t_resampled,
                 aoi = data_resampled,
-                trial_id = trialidx,
-                administration_id = adidx)
+                trial_id = df_trial$trial_id[1],
+                administration_id = df_trial$administration_id[1])
 }
 
 # key private function to do resampling of aois within a single trial
@@ -53,13 +52,19 @@ resample_xy_trial <- function(df_trial) {
   t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
   t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
 
-  # because of the behavior of approxfun, we need numerical values for missingness
+  # because of the behavior of approx, we need numerical values for missingness
   x_origin[is.na(x_origin)] <- MISSING_CONST
   y_origin[is.na(y_origin)] <- MISSING_CONST
 
   # resample
-  x_resampled <- approx(x = t_origin, y = x_origin, xout = t_resampled, method = "constant")$y
-  y_resampled <- approx(x = t_origin, y = y_origin, xout = t_resampled, method = "constant")$y
+  # we use constant interpolation for two reasons: 1) the numerical missingness
+  # needs to be constant, if you interpolate it you won't be able to back it out,
+  # 2) linear interpolation might "slow down" saccades by choosing intermediate
+  # locations (minor).
+  x_resampled <- approx(x = t_origin, y = x_origin, xout = t_resampled,
+                        method = "constant", rule = 2, ties = "ordered")$y
+  y_resampled <- approx(x = t_origin, y = y_origin, xout = t_resampled,
+                        method = "constant", rule = 2, ties = "ordered")$y
 
   # replace missing values
   x_resampled[x_resampled == MISSING_CONST] <- NA
