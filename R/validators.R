@@ -88,9 +88,15 @@ validate_table <- function(df_table, table_type) {
     content_tb <- df_table[, fieldname]
 
     if (is_primary | isTRUE(fieldoptions$unique)) {
+      # first check if primary key is in integer forms and start from zero
       if (is_primary) {
         content_tb <- as.integer(content_tb)
+        if (min(content_tb) != 0) {
+          msg_new <- paste("\n\t-\tPrimary key field ", fieldname, " should start from 0.")
+          msg_error <- c(msg_error, msg_new)
+        }
       }
+      # make sure primary key and unique fields have unique values
       is_unique <- length(content_tb) == length(unique(content_tb))
       if (!is_unique) {
         msg_new <- paste("\n\t-\tThe values in field", fieldname, "are not unique.")
