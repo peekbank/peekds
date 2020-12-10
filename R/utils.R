@@ -45,11 +45,11 @@ get_raw_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu") {
 
     # get file list in the relevant raw data directory and download
   osfr::osf_retrieve_node(osf_address) %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     dplyr::filter(name == lab_dataset_id) %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     dplyr::filter(name == "raw_data") %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     osfr::osf_download(path = path,
                  conflicts = "overwrite", verbose = TRUE, progress = TRUE)
 }
@@ -68,11 +68,11 @@ get_processed_data <- function(lab_dataset_id, path = ".", osf_address = "pr6wu"
 
   # get file list in the relevant raw data directory and download
   osfr::osf_retrieve_node(osf_address) %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     dplyr::filter(name == lab_dataset_id) %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     dplyr::filter(name == "processed_data") %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     osfr::osf_download(path = path,
                        conflicts = "overwrite", verbose = TRUE, progress = TRUE)
 }
@@ -88,9 +88,9 @@ put_processed_data <- function(token, dataset_name, path = ".",
   osf_auth(token = token)
 
   osfr::osf_retrieve_node(osf_address) %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     dplyr::filter(name == dataset_name) %>%
-    osfr::osf_ls_files() %>%
+    osfr::osf_ls_files(n_max = Inf) %>%
     dplyr::filter(name == "processed_data") %>%
     osf_upload(path = stringr::str_c(path,
                                      list.files(path = path, recursive = TRUE)),
