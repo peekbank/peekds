@@ -78,8 +78,8 @@ validate_table <- function(df_table, table_type) {
 
     # step 0: check if this is a required field
     if (is_field_required) {
-      msg_new <- paste("\n\t-\tCannot locate required field:", fieldname,
-           ". Please add the column into the ", table_type, "processed data file.")
+      msg_new <- paste("- Cannot locate required field:", fieldname,
+           ". Please add the column into the", table_type, "processed data file.")
       msg_error <- c(msg_error, msg_new)
       next()
     }
@@ -92,18 +92,18 @@ validate_table <- function(df_table, table_type) {
       if (is_primary) {
         content_tb <- as.integer(content_tb)
         if (min(content_tb) != 0) {
-          msg_new <- paste("\n\t-\tPrimary key field ", fieldname, " should start from 0.")
+          msg_new <- paste("- Primary key field", fieldname, "should start from 0.")
           msg_error <- c(msg_error, msg_new)
         }
       }
       # make sure primary key and unique fields have unique values
       is_unique <- length(content_tb) == length(unique(content_tb))
       if (!is_unique) {
-        msg_new <- paste("\n\t-\tThe values in field", fieldname, "are not unique.")
+        msg_new <- paste("- The values in field", fieldname, "are not unique.")
         msg_error <- c(msg_error, msg_new)
       }
       if(sum(is.na(content_tb)) > 0) {
-        msg_new <- paste("\n\t-\tField ", fieldname, " cannot contain NA values.")
+        msg_new <- paste("- Column", fieldname, "cannot contain NA values.")
         msg_error <- c(msg_error, msg_new)
       }
     }
@@ -112,14 +112,14 @@ validate_table <- function(df_table, table_type) {
     if (!fieldoptions$null & fieldclass == "IntegerField") {
       is_type_valid <- is.integer(content_tb)
       if (!is_type_valid) {
-        msg_new <- paste("\n\t-\t", fieldname, " should contain integers only.")
+        msg_new <- paste("- Column", fieldname, "should contain integers only.")
         msg_error <- c(msg_error, msg_new)
       }
     } else if (!fieldoptions$null & fieldclass == "CharField") {
       # numbers are allowed here as well since numbers can be converted into chars
       is_type_valid <- is.character(content_tb) | (typeof(content_tb) == "integer")
       if (!is_type_valid) {
-        msg_new <- paste("\n\t-\tField", fieldname, "should contain characters only.")
+        msg_new <- paste("- Column", fieldname, "should contain characters only.")
         msg_error <- c(msg_error, msg_new)
       }
     } else {
@@ -134,7 +134,7 @@ validate_table <- function(df_table, table_type) {
       if (is_type_valid & (length(choices_json) > 0)) {
         is_value_valid <- all(unique(content_tb) %in% choices_json)
         if (!is_value_valid) {
-          msg_new <- paste("\n\t-\tField", fieldname, "should contain the following values only: ",
+          msg_new <- paste("- Column", fieldname, "should contain the following values only: ",
                            paste(choices_json, collapse=', '), ".")
           msg_error <- c(msg_error, msg_new)
         }
@@ -146,14 +146,14 @@ validate_table <- function(df_table, table_type) {
     if (table_type == "aoi_timepoints") {
       remainder <- unique(df_table$t_norm %% pkg_globals$SAMPLE_DURATION)
       if (remainder != 0) {
-        msg_new <- paste("\n\t-\tField t_norm in table", table_type, "is not sampled at 40HZ.")
+        msg_new <- paste("- Column t_norm in table", table_type, "is not sampled at 40HZ.")
         msg_error <- c(msg_error, msg_new)
       }
     }
     if (table_type == "xy_timepoints") {
       remainder <- unique(df_table$t_norm %% pkg_globals$SAMPLE_DURATION)
       if (remainder != 0) {
-        msg_new <- paste("\n\t-\tField t_norm in table", table_type, "is not sampled at 40HZ.")
+        msg_new <- paste("- Column t_norm in table", table_type, "is not sampled at 40HZ.")
         msg_error <- c(msg_error, msg_new)
       }
     }
@@ -171,7 +171,7 @@ validate_table <- function(df_table, table_type) {
         filter(!valid_language)
 
       if (nrow(invalid_languages) != 0) {
-        msg_new <- paste("\n\t-\tThe subjects' native languages in the following entry row(s)", invalid_languages$row_number,
+        msg_new <- paste("- The subjects' native languages in the following entry row(s)", invalid_languages$row_number,
                          "do not belong in the allowed language list in json. Please see function list_language_choices().")
         msg_error <- c(msg_error, msg_new)
       }
@@ -313,8 +313,8 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv', want_plots = FALS
       msg_error <- validate_table(df_table, table_type)
       if (!is.null(msg_error)) {
         msg_error <- paste("The processed data file", table_type,
-                           "failed to pass the validator for database import with these error messsages:", msg_error)
-        cat(crayon::red(msg_error))
+                           "failed to pass the validator for database import with these error messsages:\n", paste(msg_error, collapse = "\n"))
+        cat(msg_error, "\n")
         msg_error_all <- c(msg_error_all, msg_error)
       } else {
         print(paste("The processed data file", table_type, "passed the validator!"))
