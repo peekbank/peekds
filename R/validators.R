@@ -23,7 +23,7 @@ validate_column_info <- function(path_csv) {
   table_list <- table_list[table_list != "admin"];
   # read in the csv columns info file
   file_name <- "peekbank_column_info.csv"
-  file_csv = file.path(path_csv, file_name)
+  file_csv <- file.path(path_csv, file_name)
 
   if (file.exists(file_csv)) {
     # read in csv file and check if the data is valid
@@ -181,13 +181,105 @@ validate_table <- function(df_table, table_type) {
   return(msg_error)
 }
 
+#' Generate time course plots after all the processed tables are validated
+#'
+#' @param dir_csv the folder directory containing all the csv files,
+#'                the path should end in "processed_data"
+#' @param file_ext the default is ".csv"
+#'
+#' @return
+#'
+#' @examples
+#' \dontrun{
+#' visualize_for_db_import(dir_csv = "./processed_data")
+#' }
+#'
+#' @export
+visualize_for_db_import <- function(dir_csv, file_ext = '.csv', is_save = FALSE) {
+  # first read in all the csv files
+  aoi_data <- read_csv(fs::path(dir_csv, "aoi_timepoints.csv"))
+  trials_data <- read_csv(fs::path(dir_csv, "trials.csv"))
+  trial_types_data <- read_csv(fs::path(dir_csv, "trial_types.csv"))
+  stimuli_data <- read_csv(fs::path(dir_csv, "stimuli.csv"))
+
+  #rename columns for distractor
+  distractor_stimuli_data <- stimuli_data
+  colnames(distractor_stimuli_data) <- paste("distractor_", colnames(stimuli_data), sep="")
+
+  #join to full dataset
+  full_data <- aoi_data %>%
+    left_join(trials_data) %>%
+    left_join(trial_types_data) %>%
+    left_join(stimuli_data,by=c("target_id"="stimulus_id","dataset_id")) %>%
+    left_join(distractor_stimuli_data %>% select(-distractor_dataset_id),by=c("distractor_id"="distractor_stimulus_id"))
+
+  #mutate aoi
+  full_data <- full_data %>%
+    mutate(aoi_new=case_when(
+      aoi=="target" ~ 1,
+      aoi=="distractor"~0,
+      aoi=="missing"~ NaN
+    )) %>%
+    mutate(aoi_new=ifelse(is.nan(aoi_new),NA,aoi_new))
+
+  ##### summarize by subject (really: administrations) ####
+  summarize_by_subj <- full_data %>%
+    group_by(administration_id, t_norm) %>%
+    summarize(N=sum(!is.na(aoi_new)),mean_accuracy=mean(aoi_new,na.rm=TRUE))
+
+  #### summarize across subjects ####
+  summarize_across_subj <- summarize_by_subj %>%
+    group_by(t_norm) %>%
+    summarize(N=sum(!is.na(mean_accuracy)),
+              accuracy=mean(mean_accuracy,na.rm=TRUE),
+              sd_accuracy=sd(mean_accuracy,na.rm=TRUE))
+
+  #plot (remove data points where not a lot of subjects contributed, to avoid discontinuities in the slope)
+  g1 <- ggplot(filter(summarize_across_subj,N>length(unique(full_data$administration_id))/3),aes(t_norm,accuracy))+
+    geom_line(data=filter(summarize_by_subj,N>10),aes(y=mean_accuracy,color=as.factor(administration_id),group=as.factor(administration_id)),alpha=0.2)+
+    geom_line()+
+    geom_smooth(method="gam",se=FALSE)+
+    geom_vline(xintercept=0)+
+    geom_vline(xintercept=300,linetype="dotted")+
+    geom_hline(yintercept=0.5,linetype="dashed")+
+    theme(legend.position="none")
+
+  #### by condition plotting (only if applicable) ####
+
+  ##### summarize by subject by condition ####
+  summarize_by_subj_by_condition <- full_data %>%
+    group_by(administration_id, condition,t_norm) %>%
+    summarize(N=sum(!is.na(aoi_new)),mean_accuracy=mean(aoi_new,na.rm=TRUE))
+
+  #### summarize across subjects ####
+  summarize_across_subj_by_condition <- summarize_by_subj_by_condition %>%
+    group_by(condition,t_norm) %>%
+    summarize(N=sum(!is.na(mean_accuracy)),
+              accuracy=mean(mean_accuracy,na.rm=TRUE),
+              sd_accuracy=sd(mean_accuracy,na.rm=TRUE))
+
+  g2 <- ggplot(filter(summarize_across_subj_by_condition,N>length(unique(full_data$administration_id))/3),aes(x=t_norm,y=accuracy,color=condition,group=condition))+
+    geom_line()+
+    geom_smooth(method="gam",se=FALSE)+
+    geom_vline(xintercept=0)+
+    geom_vline(xintercept=300,linetype="dotted")+
+    geom_hline(yintercept=0.5,linetype="dashed")
+
+  if (is_save) {
+    plot_name <- paste0(lab_dataset_id, "_profile.png")
+    ggsave(plot_name)
+  }
+}
+
 #' check all csv files against database schema for database import
 #'
 #' @param dir_csv the folder directory containing all the csv files,
 #'                the path should end in "processed_data"
 #' @param file_ext the default is ".csv"
 #'
-#' @return TRUE only if all the csv files have valid columns
+#' @return msg_error_all if not all tables passed the validator,
+#'                the returned variable contains a list of messages
+#'                about issues to be corrected
 #'
 #' @examples
 #' \dontrun{
@@ -195,7 +287,7 @@ validate_table <- function(df_table, table_type) {
 #' }
 #'
 #' @export
-validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
+validate_for_db_import <- function(dir_csv, file_ext = '.csv', want_plots = FALSE) {
   # get json file from github
   peekjson <- get_peekjson()
 
@@ -220,8 +312,9 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
       df_table <- utils::read.csv(file_csv)
       msg_error <- validate_table(df_table, table_type)
       if (!is.null(msg_error)) {
-        warning("The processed data file ", table_type,
-                " failed to pass the validator for database import with these error messsages:", msg_error)
+        msg_error <- paste("The processed data file", table_type,
+                           "failed to pass the validator for database import with these error messsages:", msg_error)
+        cat(crayon::red(msg_error))
         msg_error_all <- c(msg_error_all, msg_error)
       } else {
         print(paste("The processed data file", table_type, "passed the validator!"))
@@ -231,4 +324,8 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv') {
     }
   }
   return(msg_error_all)
+
+  if (want_plots) {
+
+  }
 }
