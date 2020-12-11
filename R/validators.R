@@ -314,7 +314,7 @@ validate_for_db_import <- function(dir_csv, file_ext = '.csv', want_plots = FALS
       if (!is.null(msg_error)) {
         msg_error <- paste("The processed data file", table_type,
                            "failed to pass the validator for database import with these error messsages:\n", paste(msg_error, collapse = "\n"))
-        cat(msg_error, "\n")
+        cat(crayon::bgMagenta(msg_error), "\n")
         msg_error_all <- c(msg_error_all, msg_error)
       } else {
         print(paste("The processed data file", table_type, "passed the validator!"))
