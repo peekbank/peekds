@@ -80,6 +80,8 @@ resample_xy_trial <- function(df_trial) {
                 y = y_resampled)
 }
 
+# nothing necessarily needs to be changed but we could either arrange the resulting dataset by trial_id and administration_id
+# or else use a different workflow, for example nest after grouping by administration_id and trial_id?
 
 #' This function resample times to be consistent across labs.
 #'
@@ -142,12 +144,14 @@ resample_times <- function(df_table, table_type) {
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
       map_df(resample_aoi_trial) %>%
+      arrange(administration_id, trial_id) %>%
       mutate(aoi_timepoint_id = 0:(n() - 1)) # add IDs
   } else if (table_type == "xy_timepoints") {
     df_out <- df_table %>%
       mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
       map_df(resample_xy_trial) %>%
+      arrange(administration_id, trial_id) %>%
       mutate(xy_timepoint_id = 0:(n() - 1)) # add IDs
   }
 
