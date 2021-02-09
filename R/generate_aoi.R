@@ -80,6 +80,68 @@ resample_xy_trial <- function(df_trial) {
                 y = y_resampled)
 }
 
+
+#' sets the starting point of a given trial to be zero
+#'
+#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
+#'
+#' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
+#'
+#' @return df_out with resampled time, xy or aoi value rows
+#'
+#'
+#' @examples
+#'
+#' \dontrun{
+
+#' @export
+rezero_times <- function(df_table) {
+  # first check if this data frame has all the correct columns required for normalize
+  required_columns <- c("trial_id", "administration_id", "t")
+
+  if (!all(required_columns %in% colnames(df_table))) {
+    stop(paste("Rezero times function requires the following columns to be present in the dataframe:",
+               paste(required_columns, collapse = ', '),
+               ". Rezeroing times should be the first step in the time standardization process."))
+  }
+  # center timestamp (0 POD)
+  df_out <- df %>%
+    dplyr::group_by(administration_id, trial_id) %>%
+    dplyr::mutate(t_zeroed = (t - t[1])) %>%
+    dplyr::select(-t)
+  return(df_out)
+}
+
+#' sets the starting point of a given trial to be zero
+#'
+#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
+#'
+#' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
+#'
+#' @return df_out with resampled time, xy or aoi value rows
+#'
+#'
+#' @examples
+#'
+#' \dontrun
+#' @export
+normalize_times <- function(df_table) {
+  # first check if this data frame has all the correct columns required for normalize
+  required_columns <- c("trial_id", "administration_id", "t_zeroed")
+
+  if (!all(required_columns %in% colnames(df_table))) {
+    stop(paste("Normalize times function requires the following columns to be present in the dataframe:",
+               paste(required_columns, collapse = ', '),
+               ". Times should be re-zeroed first to the starting point of a given trial before being normalized."))
+  }
+  # center timestamp (0 POD)
+  df_out <- df %>%
+    dplyr::group_by(administration_id, trial_id) %>%
+    dplyr::mutate(t_norm = t_zeroed - point_of_disambiguation) %>%
+    dplyr::select(-t_zeroed)
+  return(df_out)
+}
+
 # nothing necessarily needs to be changed but we could either arrange the resulting dataset by trial_id and administration_id
 # or else use a different workflow, for example nest after grouping by administration_id and trial_id?
 
@@ -122,20 +184,19 @@ resample_times <- function(df_table, table_type) {
 
   # first check if this data frame has all the correct columns required for re-sampling
   if (table_type == "aoi_timepoints") {
-    required_columns <- c("trial_id", "administration_id", "t", "aoi", "point_of_disambiguation")
+    required_columns <- c("trial_id", "administration_id", "t_norm", "aoi")
   } else if (table_type == "xy_timepoints") {
-    required_columns <- c("trial_id", "administration_id", "t", "x", "y", "point_of_disambiguation")
+    required_columns <- c("trial_id", "administration_id", "t_norm", "x", "y")
   }
 
-  if (!all(required_columns %in% colnames(df_table))) {
-    stop(paste("XY resampling requires the following columns to be present in the dataframe:",
-               paste(required_columns, collapse = ', ')))
-  }
-
-  # center times
+  # re-zero and normalize times first
   # this is mandatory, comes from our decision that not linking resampling and
   # centering causes a lot of problems
-  df_table <- center_times(df_table)
+  if (!all(required_columns %in% colnames(df_table))) {
+    stop(paste("Normalize times function requires the following columns to be present in the dataframe:",
+               paste(required_columns, collapse = ', '),
+               ". Times should be re-zeroed and normalized first before being resampled!"))
+  }
 
   # main resampling call
   if (table_type == "aoi_timepoints") {
@@ -159,11 +220,7 @@ resample_times <- function(df_table, table_type) {
 }
 
 #' Normalize time by point of disambiguation
-#'
-#' @param df df that has administration_id, trial_id, and t
-#'
-#' @return df_out df that has the normalized times (t_norm)
-#' @export
+#' obslate
 center_times <- function(df) {
   # center timestamp (0 POD)
   df_out <- df %>%
