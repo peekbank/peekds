@@ -100,7 +100,7 @@ rezero_times <- function(df_table) {
                ". Rezeroing times should be the first step in the time standardization process."))
   }
   # center timestamp (0 POD)
-  df_out <- df %>%
+  df_out <- df_table %>%
     dplyr::group_by(administration_id, trial_id) %>%
     dplyr::mutate(t_zeroed = (t - t[1])) %>%
     dplyr::select(-t)
@@ -126,7 +126,7 @@ normalize_times <- function(df_table) {
                ". Times should be re-zeroed first to the starting point of a given trial before being normalized."))
   }
   # center timestamp (0 POD)
-  df_out <- df %>%
+  df_out <- df_table %>%
     dplyr::group_by(administration_id, trial_id) %>%
     dplyr::mutate(t_norm = t_zeroed - point_of_disambiguation) %>%
     dplyr::select(-t_zeroed)
