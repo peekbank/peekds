@@ -88,11 +88,6 @@ resample_xy_trial <- function(df_trial) {
 #' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
 #'
 #' @return df_out with resampled time, xy or aoi value rows
-#'
-#'
-#' @examples
-#'
-#' \dontrun{
 
 #' @export
 rezero_times <- function(df_table) {
@@ -120,10 +115,6 @@ rezero_times <- function(df_table) {
 #'
 #' @return df_out with resampled time, xy or aoi value rows
 #'
-#'
-#' @examples
-#'
-#' \dontrun
 #' @export
 normalize_times <- function(df_table) {
   # first check if this data frame has all the correct columns required for normalize
