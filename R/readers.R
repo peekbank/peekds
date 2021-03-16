@@ -78,7 +78,7 @@ list_ds_tables <- function(coding_method = "eyetracking") {
 
   if (coding_method == "eyetracking" | coding_method == "automated gaze coding") {
     table_list <- table_list_auto
-  } else if (coding_method == "manual gaze coding") {
+  } else if (coding_method == "manual gaze coding" | coding_method == "preprocessed eyetracking") {
     table_list <- table_list_manual
   } else {
     stop("Invalid coding method type! The type can only be one of the following: ",
