@@ -237,7 +237,7 @@ process_to_xy <- function(format, dir) {
     "smi" = process_smi
     # "eyelink" = process_eyelink
   )
-  assertthat::assert_that(format %in% names(readers))
+  stopifnot(format %in% names(readers))
   reader <- readers[format]
   reader(dir)
 }

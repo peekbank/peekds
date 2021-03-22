@@ -8,23 +8,22 @@ Authors@R: c(
     person("Michael", "Frank", email = "mcfrank@stanford.edu", role = "ctb")
     )
 Description: Provides data standard for peekbank.
+Depends: R (>= 4.0.0)
 License: GPL-3
+URL: http://github.com/langcog/peekds
+BugReports: http://github.com/langcog/peekds/issues
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
 Imports:
-  assertthat,
-  jsonlite,
-  dplyr,
-  osfr,
-  readr,
-  stringr,
-  tsibble,
-  purrr,
-  magrittr,
-  rlang,
-  reader,
-  lubridate,
-  tidyr,
-  zoo,
-  ggplot2
+  dplyr (>= 1.0.4),
+  ggplot2 (>= 3.3.3),
+  jsonlite (>= 1.7.2),
+  magrittr (>= 2.0.1),
+  osfr (>= 0.2.8),
+  purrr (>= 0.3.4),
+  reader (>= 1.0.6),
+  readr (>= 1.4.0),
+  rlang (>= 0.4.10),
+  stringr (>= 1.4.0),
+  tidyr (>= 1.1.2)
+RoxygenNote: 7.1.1
