@@ -163,11 +163,11 @@ validate_table <- function(df_table, table_type) {
     if (table_type == "subjects" && fieldname == "native_language") {
       language_list <- list_language_choices()
 
-      # go through every native language in the subjects table, check if all the langauge codes are in the allowed list from json file
+      # go through every native language in the subjects table, check if all the language codes are in the allowed list from json file
       invalid_languages <- df_table %>%
         mutate(row_number = 1:n(),
                valid_language = map_lgl(native_language,
-                                        function(lang) all(str_split(lang, ", ")[[1]] %in% language_list))) %>%
+                                        function(lang) all(str_trim(str_split(lang, ",")[[1]]) %in% language_list))) %>%
         filter(!valid_language)
 
       if (nrow(invalid_languages) != 0) {
@@ -195,14 +195,14 @@ validate_table <- function(df_table, table_type) {
 #' }
 #'
 #' @export
-visualize_for_db_import <- function(dir_csv, file_ext = '.csv', is_save = FALSE) {
+visualize_for_db_import <- function(dir_csv, lab_dataset_id, is_save = FALSE) {
   # first read in all the csv files
-  aoi_data <- read_csv(fs::path(dir_csv, "aoi_timepoints.csv"))
-  trials_data <- read_csv(fs::path(dir_csv, "trials.csv"))
-  trial_types_data <- read_csv(fs::path(dir_csv, "trial_types.csv"))
-  stimuli_data <- read_csv(fs::path(dir_csv, "stimuli.csv"))
+  aoi_data <- utils::read.csv(fs::path(dir_csv, "aoi_timepoints.csv"))
+  trials_data <- utils::read.csv(fs::path(dir_csv, "trials.csv"))
+  trial_types_data <- utils::read.csv(fs::path(dir_csv, "trial_types.csv"))
+  stimuli_data <- utils::read.csv(fs::path(dir_csv, "stimuli.csv"))
 
-  #rename columns for distractor
+  # rename columns for distractor
   distractor_stimuli_data <- stimuli_data
   colnames(distractor_stimuli_data) <- paste("distractor_", colnames(stimuli_data), sep="")
 
@@ -243,6 +243,7 @@ visualize_for_db_import <- function(dir_csv, file_ext = '.csv', is_save = FALSE)
     geom_vline(xintercept=300,linetype="dotted")+
     geom_hline(yintercept=0.5,linetype="dashed")+
     theme(legend.position="none")
+  print(g1)
 
   #### by condition plotting (only if applicable) ####
 
@@ -264,6 +265,7 @@ visualize_for_db_import <- function(dir_csv, file_ext = '.csv', is_save = FALSE)
     geom_vline(xintercept=0)+
     geom_vline(xintercept=300,linetype="dotted")+
     geom_hline(yintercept=0.5,linetype="dashed")
+  # print(g2)
 
   if (is_save) {
     plot_name <- paste0(lab_dataset_id, "_profile.png")
