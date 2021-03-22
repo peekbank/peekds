@@ -7,7 +7,7 @@
 list_coding_methods()
 }
 \value{
-
+TODO
 }
 \description{
 Get coding method list from json file

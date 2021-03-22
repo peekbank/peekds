@@ -13,7 +13,9 @@ the path should end in "processed_data"}
 \item{file_ext}{the default is ".csv"}
 }
 \value{
-TRUE only if all the csv files have valid columns
+msg_error_all if not all tables passed the validator,
+               the returned variable contains a list of messages
+               about issues to be corrected
 }
 \description{
 check all csv files against database schema for database import

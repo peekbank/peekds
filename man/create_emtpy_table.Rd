@@ -7,10 +7,10 @@
 create_emtpy_table(table_type)
 }
 \arguments{
-\item{table_type}{character}
+\item{table_type}{character TODO}
 }
 \value{
-
+TODO
 }
 \description{
 Create empty table

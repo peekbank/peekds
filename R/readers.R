@@ -1,8 +1,3 @@
-#' @importFrom dplyr "%>%"
-#' @importFrom magrittr "%<>%"
-#' @importFrom rlang .data
-NULL
-
 #' parse json file from peekbank github into a dataframe
 #'
 #' @return peekjson -- the organized dataframe from json file
@@ -45,8 +40,7 @@ get_json_fields <- function(table_type) {
   }
 
   # get the list of column names in json
-  fields_json <-
-    peekjson[which(peekjson$table == table_type), "fields"]
+  fields_json <- peekjson[which(peekjson$table == table_type), "fields"]
   fields_json <- fields_json[[1]]
 
   # add "_id" to all the foreign key field names
@@ -58,9 +52,9 @@ get_json_fields <- function(table_type) {
 
 #' List the tables required for datasets with different coding method
 #'
-#' @param dataset_type character
+#' @param coding_method character TODO
 #'
-#' @return table_list
+#' @return TODO
 #'
 #' @examples
 #' \dontrun{
@@ -82,14 +76,14 @@ list_ds_tables <- function(coding_method = "eyetracking") {
     table_list <- table_list_manual
   } else {
     stop("Invalid coding method type! The type can only be one of the following: ",
-         paste0(methods_json, collapse = ", "), ".")
+         paste0(list_coding_methods(), collapse = ", "), ".")
   }
   return(table_list)
 }
 
 #' Get coding method list from json file
 #'
-#' @return
+#' @return TODO
 #' @export
 list_coding_methods <- function() {
   fields_json <- get_json_fields(table_type = "administrations")
@@ -101,10 +95,10 @@ list_coding_methods <- function() {
 
 #' Is this table required?
 #'
-#' @param table_type character
-#' @param dataset_type character
+#' @param table_type character TODO
+#' @param coding_method character TODO
 #'
-#' @return
+#' @return TODO
 #'
 #' @examples
 #' \dontrun{
@@ -120,7 +114,7 @@ is_table_required <- function(table_type, coding_method) {
 
 #' List current allowed language choices for db import
 #'
-#' @return language_list
+#' @return language_list TODO
 #'
 #' @examples
 #' \dontrun{
@@ -205,8 +199,6 @@ map_columns <- function(raw_data, raw_format, table_type) {
 #' @param df_procd processed data frame
 #' @param table_type type of table to be saved
 #'
-#' @return null
-#'
 #' @export
 save_table <- function(df_procd, table_type) {
   # because of the standardized data structure, processed csvs need to be under
@@ -231,8 +223,9 @@ save_table <- function(df_procd, table_type) {
 #' @param format One of "tobii", "smi", "eyelink"
 #' @param dir Directory with raw data
 #'
-#' @export
+#' @return TODO
 #'
+#' @export
 process_to_xy <- function(format, dir) {
   # can be changed to process_smi_xy or for any dataset that needs to average
   # xy data in order to xy_data table
@@ -241,8 +234,8 @@ process_to_xy <- function(format, dir) {
 
   readers <- list(
     "tobii" = process_tobii,
-    "smi" = process_smi,
-    "eyelink" = process_eyelink
+    "smi" = process_smi
+    # "eyelink" = process_eyelink
   )
   assertthat::assert_that(format %in% names(readers))
   reader <- readers[format]
@@ -251,18 +244,18 @@ process_to_xy <- function(format, dir) {
 
 #' Create empty table
 #'
-#' @param table_type character
+#' @param table_type character TODO
 #'
-#' @return
+#' @return TODO
 #' @export
 create_emtpy_table <- function(table_type) {
-  # fetch the required columns from json file
-  colnames_json <- get_json_colnames(table_type)
-  # create emtpy df
-  df_table <- utils::read.csv(text = paste0(colnames_json, collapse = ","))
-  # add NA values
-  df_table[1,] = c(0, rep(NA, length(colnames_json)-1))
-  return(df_table)
+  # # fetch the required columns from json file
+  # colnames_json <- get_json_colnames(table_type)
+  # # create emtpy df
+  # df_table <- utils::read.csv(text = paste0(colnames_json, collapse = ","))
+  # # add NA values
+  # df_table[1,] = c(0, rep(NA, length(colnames_json)-1))
+  # return(df_table)
 }
 
 
@@ -270,6 +263,8 @@ create_emtpy_table <- function(table_type) {
 #' dataset specific: datasets
 #'
 #' @param dir_raw Directory with raw data
+#' @param dataset_name TODO
+#' @param dataset_type TODO
 #'
 #' @export
 process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = "automated") {
@@ -292,7 +287,7 @@ process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = 
     # get the unique monitor sizes
     monitor_size_str <- raw_data[["RecordingResolution"]] %>%
                     unique()  %>%
-                    na.omit() %>%
+                    stats::na.omit() %>%
                     as.vector()
     # when multiple monitor size, just pick one
     if (length(monitor_size_str) > 1) {
@@ -469,7 +464,7 @@ process_tobii <- function(dir_raw, dataset_name = "sample_data", dataset_type = 
 #' @param possible_delims character vector
 #' @param stimulus_coding character
 #'
-#' @return
+#' @return TODO
 #' @export
 process_smi_file <- function(x, dir, stims_to_remove_chars = c(".avi"),
                              stims_to_keep_chars = c("_"),
@@ -629,7 +624,7 @@ process_smi_file <- function(x, dir, stims_to_remove_chars = c(".avi"),
 #' Process smi raw data
 #'
 #' @param dir Directory with raw data
-#' @param file_ext
+#' @param file_ext TODO
 #'
 #' @export
 process_smi <- function(dir, file_ext = '.txt') {
@@ -657,11 +652,11 @@ process_smi <- function(dir, file_ext = '.txt') {
 
 }
 
-#' Process eyelink raw data
-#'
-#' @param dir Directory with raw data
-#'
-#' @export
-process_eyelink <- function(dir) {
-
-}
+# Process eyelink raw data
+#
+# @param dir Directory with raw data
+#
+# @export
+# process_eyelink <- function(dir) {
+#
+# }

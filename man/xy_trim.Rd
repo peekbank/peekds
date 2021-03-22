@@ -11,6 +11,9 @@ xy_trim(xy_data, datasets)
 
 \item{datasets}{the peekDS formatted datasets.csv that contains screen dimension info}
 }
+\value{
+TODO
+}
 \description{
 This function trims the xy_data such that only gaze coordinates that fall within the stimuli space is preserved
 }

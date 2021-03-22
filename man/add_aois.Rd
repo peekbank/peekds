@@ -7,7 +7,10 @@
 add_aois(xy_joined)
 }
 \arguments{
-\item{xy_joined}{}
+\item{xy_joined}{TODO}
+}
+\value{
+TODO
 }
 \description{
 Add AOIs to an xy dataframe

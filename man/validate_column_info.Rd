@@ -8,8 +8,6 @@ validate_column_info(path_csv)
 }
 \arguments{
 \item{path_csv}{the directory of csv file 'peekbank_column_info.csv'}
-
-\item{file_ext}{the default is ".csv"}
 }
 \value{
 TRUE only if all the csv files have valid columns

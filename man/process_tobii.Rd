@@ -13,6 +13,10 @@ process_tobii(
 }
 \arguments{
 \item{dir_raw}{Directory with raw data}
+
+\item{dataset_name}{TODO}
+
+\item{dataset_type}{TODO}
 }
 \description{
 Process tobii raw data

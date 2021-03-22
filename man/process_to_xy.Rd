@@ -11,6 +11,9 @@ process_to_xy(format, dir)
 
 \item{dir}{Directory with raw data}
 }
+\value{
+TODO
+}
 \description{
 Process directory of raw data to xy data
 }

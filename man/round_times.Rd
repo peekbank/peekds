@@ -7,10 +7,10 @@
 round_times(df)
 }
 \arguments{
-\item{dir}{df that has subject_id, dataset_id, trial_id and times}
+\item{df}{df that has subject_id, dataset_id, trial_id and times}
 }
 \value{
-
+TODO
 }
 \description{
 Round times to our specified sample rate to be consistent across labs

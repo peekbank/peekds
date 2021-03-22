@@ -13,17 +13,6 @@ resample_times(df_table, table_type)
 }
 \value{
 df_out with resampled time, xy or aoi value rows
-
-#' @examples
-\dontrun{
-dir_datasets <- "testdataset" # local datasets dir
-lab_dataset_id <- "pomper_saffran_2016"
-dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
-table_type <- "aoi_timepoints"
-file_csv <- file.path(dir_csv, paste0(table_type, '.csv'))
-df_table <- utils::read.csv(file_csv)
-df_resampled <- resample_times(df_table, table_type = "aoi_timepoints")
-}
 }
 \description{
 Resampling is done by the following steps:
@@ -39,4 +28,17 @@ Resampling is done by the following steps:
     for more details on approxfun, please see: https://stat.ethz.ch/R-manual/R-devel/library/stats/html/approxfun.html
 
 4. after resampling, bind resampled dataframes back together and re-assign aoi_timepoint_id
+}
+\examples{
+
+\dontrun{
+dir_datasets <- "testdataset" # local datasets dir
+lab_dataset_id <- "pomper_saffran_2016"
+dir_csv <- file.path(dir_datasets, lab_dataset_id, "processed_data")
+table_type <- "aoi_timepoints"
+file_csv <- file.path(dir_csv, paste0(table_type, '.csv'))
+df_table <- utils::read.csv(file_csv)
+df_resampled <- resample_times(df_table, table_type = "aoi_timepoints")
+}
+
 }

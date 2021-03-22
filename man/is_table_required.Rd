@@ -7,12 +7,12 @@
 is_table_required(table_type, coding_method)
 }
 \arguments{
-\item{table_type}{character}
+\item{table_type}{character TODO}
 
-\item{dataset_type}{character}
+\item{coding_method}{character TODO}
 }
 \value{
-
+TODO
 }
 \description{
 Is this table required?

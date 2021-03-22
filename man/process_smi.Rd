@@ -9,7 +9,7 @@ process_smi(dir, file_ext = ".txt")
 \arguments{
 \item{dir}{Directory with raw data}
 
-\item{file_ext}{}
+\item{file_ext}{TODO}
 }
 \description{
 Process smi raw data

@@ -11,9 +11,6 @@ save_table(df_procd, table_type)
 
 \item{table_type}{type of table to be saved}
 }
-\value{
-null
-}
 \description{
 supporting function for saving processed table as csv files in processed_data/
 }

@@ -1,3 +1,5 @@
+utils::globalVariables(".")
+
 #' @importFrom dplyr "%>%"
 #' @importFrom magrittr "%<>%"
 #' @importFrom rlang .data
@@ -28,7 +30,7 @@ resample_aoi_trial <- function(df_trial) {
   aoi_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
 
   # start resampling with approx
-  aoi_resampled <- approx(x = t_origin, y = aoi_num, xout = t_resampled,
+  aoi_resampled <- stats::approx(x = t_origin, y = aoi_num, xout = t_resampled,
                            method = "constant", rule = 2, ties = "ordered")$y
   aoi_resampled_recoded <- dplyr::recode(aoi_resampled, '1' = "target", '2' = "distractor",
                                          '3' = "other", '4' = "missing")
@@ -62,9 +64,9 @@ resample_xy_trial <- function(df_trial) {
   # needs to be constant, if you interpolate it you won't be able to back it out,
   # 2) linear interpolation might "slow down" saccades by choosing intermediate
   # locations (minor).
-  x_resampled <- approx(x = t_origin, y = x_origin, xout = t_resampled,
+  x_resampled <- stats::approx(x = t_origin, y = x_origin, xout = t_resampled,
                         method = "constant", rule = 2, ties = "ordered")$y
-  y_resampled <- approx(x = t_origin, y = y_origin, xout = t_resampled,
+  y_resampled <- stats::approx(x = t_origin, y = y_origin, xout = t_resampled,
                         method = "constant", rule = 2, ties = "ordered")$y
 
   # replace missing values
@@ -85,8 +87,6 @@ resample_xy_trial <- function(df_trial) {
 #'
 #' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
 #'
-#' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
-#'
 #' @return df_out with resampled time, xy or aoi value rows
 
 #' @export
@@ -101,17 +101,15 @@ rezero_times <- function(df_table) {
   }
   # center timestamp (0 POD)
   df_out <- df_table %>%
-    dplyr::group_by(administration_id, trial_id) %>%
-    dplyr::mutate(t_zeroed = (t - t[1])) %>%
-    dplyr::select(-t)
+    dplyr::group_by(.data$administration_id, .data$trial_id) %>%
+    dplyr::mutate(t_zeroed = (.data$t - .data$t[1])) %>%
+    dplyr::select(-.data$t)
   return(df_out)
 }
 
 #' sets the starting point of a given trial to be zero
 #'
 #' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
-#'
-#' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
 #'
 #' @return df_out with resampled time, xy or aoi value rows
 #'
@@ -127,9 +125,9 @@ normalize_times <- function(df_table) {
   }
   # center timestamp (0 POD)
   df_out <- df_table %>%
-    dplyr::group_by(administration_id, trial_id) %>%
-    dplyr::mutate(t_norm = t_zeroed - point_of_disambiguation) %>%
-    dplyr::select(-t_zeroed)
+    dplyr::group_by(.data$administration_id, .data$trial_id) %>%
+    dplyr::mutate(t_norm = .data$t_zeroed - .data$point_of_disambiguation) %>%
+    dplyr::select(-.data$t_zeroed)
   return(df_out)
 }
 
@@ -193,39 +191,40 @@ resample_times <- function(df_table, table_type) {
   if (table_type == "aoi_timepoints") {
     # start resampling process by iterating through every trial within every administration
     df_out <- df_table %>%
-      mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
+      dplyr::mutate(admin_trial_id = paste(.data$administration_id, .data$trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
-      map_df(resample_aoi_trial) %>%
-      arrange(administration_id, trial_id) %>%
-      mutate(aoi_timepoint_id = 0:(n() - 1)) # add IDs
+      purrr::map_df(resample_aoi_trial) %>%
+      dplyr::arrange(.data$administration_id, .data$trial_id) %>%
+      dplyr::mutate(aoi_timepoint_id = 0:(dplyr::n() - 1)) # add IDs
   } else if (table_type == "xy_timepoints") {
     df_out <- df_table %>%
-      mutate(admin_trial_id = paste(administration_id, trial_id, sep = "_")) %>%
+      dplyr::mutate(admin_trial_id = paste(.data$administration_id, .data$trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
-      map_df(resample_xy_trial) %>%
-      arrange(administration_id, trial_id) %>%
-      mutate(xy_timepoint_id = 0:(n() - 1)) # add IDs
+      purrr::map_df(resample_xy_trial) %>%
+      dplyr::arrange(.data$administration_id, .data$trial_id) %>%
+      dplyr::mutate(xy_timepoint_id = 0:(dplyr::n() - 1)) # add IDs
   }
 
   return(df_out)
 }
 
-#' Normalize time by point of disambiguation
-#' obslate
-center_times <- function(df) {
-  # center timestamp (0 POD)
-  df_out <- df %>%
-    dplyr::group_by(administration_id, trial_id) %>%
-    dplyr::mutate(t_norm = (t - t[1]) - point_of_disambiguation) %>%
-    dplyr::select(-t)
-  return(df_out)
-}
+# Normalize time by point of disambiguation
+# obslate
+# center_times <- function(df) {
+#   # center timestamp (0 POD)
+#   df_out <- df %>%
+#     dplyr::group_by(administration_id, trial_id) %>%
+#     dplyr::mutate(t_norm = (t - t[1]) - point_of_disambiguation) %>%
+#     dplyr::select(-t)
+#   return(df_out)
+# }
 
 
 #' Add AOIs to an xy dataframe
 #'
-#' @param xy_joined
+#' @param xy_joined TODO
 #'
+#' @return TODO
 #' @export
 add_aois <- function(xy_joined) {
   xy_joined %<>%
@@ -246,9 +245,9 @@ add_aois <- function(xy_joined) {
 
 #' Round times to our specified sample rate to be consistent across labs
 #'
-#' @param dir df that has subject_id, dataset_id, trial_id and times
+#' @param df df that has subject_id, dataset_id, trial_id and times
 #'
-#' @return
+#' @return TODO
 #' @export
 round_times <- function(df) {
   # set sample rates
@@ -259,16 +258,14 @@ round_times <- function(df) {
     data = .data$data %>%
       purrr::map(function(df) {
         df_rounded <- df %>%
-          dplyr::mutate(t_zeroed = round(pkg_globals$SAMPLE_DURATION * round(t_zeroed/pkg_globals$SAMPLE_DURATION)))
+          dplyr::mutate(t_zeroed = round(pkg_globals$SAMPLE_DURATION * round(.data$t_zeroed/pkg_globals$SAMPLE_DURATION)))
 
-        t_resampled <- tibble::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
+        t_resampled <- dplyr::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
                                                            max(df_rounded$t_zeroed),
                                                            pkg_globals$SAMPLE_DURATION)))
 
         dplyr::left_join(t_resampled, df_rounded, by = "t_zeroed") %>%
-          dplyr::group_by(t_zeroed)
+          dplyr::group_by(.data$t_zeroed)
       })) %>%
   tidyr::unnest(.data$data)
 }
-
-

@@ -27,7 +27,7 @@ process_smi_file(
 \item{stimulus_coding}{character}
 }
 \value{
-
+TODO
 }
 \description{
 Process an individual smi raw data file
