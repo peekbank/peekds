@@ -7,9 +7,11 @@
 get_raw_data(lab_dataset_id, path = ".", osf_address = "pr6wu")
 }
 \arguments{
-\item{lab_dataset_id}{Specific ID occurring in the file hierarchy of the relevant OSF repo.}
+\item{lab_dataset_id}{Specific ID occurring in the file hierarchy of the
+relevant OSF repo.}
 
-\item{path}{Where you want it on your own machine. Will error if directory doesn't exist.}
+\item{path}{Where you want it on your own machine. Will error if directory
+doesn't exist.}
 
 \item{osf_address}{pr6wu for peekbank.}
 }

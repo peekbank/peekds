@@ -2,21 +2,23 @@
 % Please edit documentation in R/validators.R
 \name{validate_table}
 \alias{validate_table}
-\title{Check if a dataframe/table is EtDS compliant before saving as csv or importing into database}
+\title{Check if a dataframe/table is EtDS compliant before saving as csv or
+importing into database}
 \usage{
 validate_table(df_table, table_type)
 }
 \arguments{
 \item{df_table}{the data frame to be saved}
 
-\item{table_type}{the type of table, can be one of this six types:
-xy_data, aoi_data, participants, trials, dataset, aoi_regions}
+\item{table_type}{the type of table, can be one of this six types: xy_data,
+aoi_data, participants, trials, dataset, aoi_regions}
 }
 \value{
 TRUE when the column names of this table are valid
 }
 \description{
-Check if a dataframe/table is EtDS compliant before saving as csv or importing into database
+Check if a dataframe/table is EtDS compliant before saving as csv or
+importing into database
 }
 \examples{
 \dontrun{

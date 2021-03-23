@@ -7,7 +7,8 @@
 normalize_times(df_table)
 }
 \arguments{
-\item{df_table}{to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id}
+\item{df_table}{to-be-resampled dataframe with t, aoi/xy values, trial_id and
+administration_id}
 }
 \value{
 df_out with resampled time, xy or aoi value rows

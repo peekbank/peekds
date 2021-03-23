@@ -2,18 +2,21 @@
 % Please edit documentation in R/xy_trim.R
 \name{xy_trim}
 \alias{xy_trim}
-\title{This function trims the xy_data such that only gaze coordinates that fall within the stimuli space is preserved}
+\title{This function trims the xy_data such that only gaze coordinates that fall
+within the stimuli space is preserved}
 \usage{
 xy_trim(xy_data, datasets)
 }
 \arguments{
 \item{xy_data}{the pre-trim xy data generated from the import script}
 
-\item{datasets}{the peekDS formatted datasets.csv that contains screen dimension info}
+\item{datasets}{the peekDS formatted datasets.csv that contains screen
+dimension info}
 }
 \value{
 TODO
 }
 \description{
-This function trims the xy_data such that only gaze coordinates that fall within the stimuli space is preserved
+This function trims the xy_data such that only gaze coordinates that fall
+within the stimuli space is preserved
 }

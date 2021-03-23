@@ -2,7 +2,8 @@
 % Please edit documentation in R/readers.R
 \name{save_table}
 \alias{save_table}
-\title{supporting function for saving processed table as csv files in processed_data/}
+\title{supporting function for saving processed table as csv files in
+processed_data/}
 \usage{
 save_table(df_procd, table_type)
 }
@@ -12,5 +13,6 @@ save_table(df_procd, table_type)
 \item{table_type}{type of table to be saved}
 }
 \description{
-supporting function for saving processed table as csv files in processed_data/
+supporting function for saving processed table as csv files in
+processed_data/
 }

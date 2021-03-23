@@ -1,39 +1,29 @@
-utils::globalVariables(".")
-
-#' @importFrom dplyr "%>%"
-#' @importFrom magrittr "%<>%"
-#' @importFrom rlang .data
-NULL
-
-# set package globals in this way to avoid messing up the workspace of the user loading the package
-pkg_globals <- new.env()
-pkg_globals$SAMPLE_RATE <- 40 # Hz
-pkg_globals$SAMPLE_DURATION <- 1000/pkg_globals$SAMPLE_RATE
-pkg_globals$MAX_GAP_LENGTH <- .100 # S
-pkg_globals$MAX_GAP_SAMPLES <- pkg_globals$MAX_GAP_LENGTH / (1/pkg_globals$SAMPLE_RATE)
-
-# key private function to do resampling of aois within a single trial
-# uses approxfun to resample
-# because missingness is coded as an integer and interpolation is "constant" then
-# no "gaps" between AOIs are filled. actually interpolating across blinks is left
-# for a different function as this is a theory-laden decision.
+# key private function to do resampling of aois within a single trial uses
+# approxfun to resample because missingness is coded as an integer and
+# interpolation is "constant" then no "gaps" between AOIs are filled. actually
+# interpolating across blinks is left for a different function as this is a
+# theory-laden decision.
 resample_aoi_trial <- function(df_trial) {
   t_origin <- df_trial$t_norm
   data_origin <- df_trial$aoi
 
   # create the new timestamps for resampling
   t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
-  t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
+  t_resampled <- seq(from = t_start, to = max(t_origin),
+                     by = pkg_globals$SAMPLE_DURATION)
 
   # exchange strings values with integers for resampling
   # this step critical for interpolating missing vals quickly and correctly
-  aoi_num <- dplyr::recode(data_origin, target = 1, distractor = 2, other = 3, missing = 4)
+  aoi_num <- data_origin %>%
+    dplyr::recode(target = 1, distractor = 2, other = 3, missing = 4)
 
   # start resampling with approx
   aoi_resampled <- stats::approx(x = t_origin, y = aoi_num, xout = t_resampled,
-                           method = "constant", rule = 2, ties = "ordered")$y
-  aoi_resampled_recoded <- dplyr::recode(aoi_resampled, '1' = "target", '2' = "distractor",
-                                         '3' = "other", '4' = "missing")
+                                 method = "constant", rule = 2,
+                                 ties = "ordered")$y
+  aoi_resampled_recoded <- aoi_resampled %>%
+    dplyr::recode("1" = "target", "2" = "distractor",
+                  "3" = "other", "4" = "missing")
 
   # adding back the columns to match schema
   dplyr::tibble(t_norm = t_resampled,
@@ -53,21 +43,23 @@ resample_xy_trial <- function(df_trial) {
 
   # create the new timestamps for resampling
   t_start <- min(t_origin) - (min(t_origin) %% pkg_globals$SAMPLE_DURATION)
-  t_resampled <- seq(from = t_start, to = max(t_origin), by = pkg_globals$SAMPLE_DURATION)
+  t_resampled <- seq(from = t_start, to = max(t_origin),
+                     by = pkg_globals$SAMPLE_DURATION)
 
   # because of the behavior of approx, we need numerical values for missingness
   x_origin[is.na(x_origin)] <- MISSING_CONST
   y_origin[is.na(y_origin)] <- MISSING_CONST
 
-  # resample
-  # we use constant interpolation for two reasons: 1) the numerical missingness
-  # needs to be constant, if you interpolate it you won't be able to back it out,
-  # 2) linear interpolation might "slow down" saccades by choosing intermediate
-  # locations (minor).
+  # resample we use constant interpolation for two reasons: 1) the numerical
+  # missingness needs to be constant, if you interpolate it you won't be able to
+  # back it out, 2) linear interpolation might "slow down" saccades by choosing
+  # intermediate locations (minor).
   x_resampled <- stats::approx(x = t_origin, y = x_origin, xout = t_resampled,
-                        method = "constant", rule = 2, ties = "ordered")$y
+                               method = "constant", rule = 2,
+                               ties = "ordered")$y
   y_resampled <- stats::approx(x = t_origin, y = y_origin, xout = t_resampled,
-                        method = "constant", rule = 2, ties = "ordered")$y
+                               method = "constant", rule = 2,
+                               ties = "ordered")$y
 
   # replace missing values
   x_resampled[x_resampled == MISSING_CONST] <- NA
@@ -82,22 +74,24 @@ resample_xy_trial <- function(df_trial) {
                 y = y_resampled)
 }
 
-
 #' sets the starting point of a given trial to be zero
 #'
-#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
+#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and
+#'   administration_id
 #'
 #' @return df_out with resampled time, xy or aoi value rows
 
 #' @export
 rezero_times <- function(df_table) {
-  # first check if this data frame has all the correct columns required for normalize
+  # first check if this data frame has all the correct columns required for
+  # normalize
   required_columns <- c("trial_id", "administration_id", "t")
 
   if (!all(required_columns %in% colnames(df_table))) {
-    stop(paste("Rezero times function requires the following columns to be present in the dataframe:",
-               paste(required_columns, collapse = ', '),
-               ". Rezeroing times should be the first step in the time standardization process."))
+    stop(.msg("Rezero times function requires the following columns to be
+              present in the dataframe:
+              {paste(required_columns, collapse = ', ')}. Rezeroing times should
+              be the first step in the time standardization process."))
   }
   # center timestamp (0 POD)
   df_out <- df_table %>%
@@ -109,19 +103,23 @@ rezero_times <- function(df_table) {
 
 #' sets the starting point of a given trial to be zero
 #'
-#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
+#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and
+#'   administration_id
 #'
 #' @return df_out with resampled time, xy or aoi value rows
 #'
 #' @export
 normalize_times <- function(df_table) {
-  # first check if this data frame has all the correct columns required for normalize
+  # first check if this data frame has all the correct columns required for
+  # normalize
   required_columns <- c("trial_id", "administration_id", "t_zeroed")
 
   if (!all(required_columns %in% colnames(df_table))) {
-    stop(paste("Normalize times function requires the following columns to be present in the dataframe:",
-               paste(required_columns, collapse = ', '),
-               ". Times should be re-zeroed first to the starting point of a given trial before being normalized."))
+    stop(.msg("Normalize times function requires the following columns to be
+              present in the dataframe:
+              {paste(required_columns, collapse = ', ')}. Times should be
+              re-zeroed first to the starting point of a given trial before
+              being normalized."))
   }
   # center timestamp (0 POD)
   df_out <- df_table %>%
@@ -131,8 +129,9 @@ normalize_times <- function(df_table) {
   return(df_out)
 }
 
-# nothing necessarily needs to be changed but we could either arrange the resulting dataset by trial_id and administration_id
-# or else use a different workflow, for example nest after grouping by administration_id and trial_id?
+# nothing necessarily needs to be changed but we could either arrange the
+# resulting dataset by trial_id and administration_id or else use a different
+# workflow, for example nest after grouping by administration_id and trial_id?
 
 #' This function resample times to be consistent across labs.
 #'
@@ -140,16 +139,20 @@ normalize_times <- function(df_table) {
 #'
 #' 1. iterate through every trial for every administration
 #'
-#' 2. create desired timepoint sequence with equal spacing according to pre-specified SAMPLE_RATE parameter
+#' 2. create desired timepoint sequence with equal spacing according to
+#' pre-specified SAMPLE_RATE parameter
 #'
-#' 3. use approxfun to interpolate given data points to align with desired timepoint sequence
-#'     "constant" interpolation method is used for AOI timepoints;
-#'     "linear" interpolation method is used for xy timepoints;
-#'     for more details on approxfun, please see: https://stat.ethz.ch/R-manual/R-devel/library/stats/html/approxfun.html
+#' 3. use approxfun to interpolate given data points to align with desired
+#' timepoint sequence "constant" interpolation method is used for AOI
+#' timepoints; "linear" interpolation method is used for xy timepoints; for more
+#' details on approxfun, please see:
+#' https://stat.ethz.ch/R-manual/R-devel/library/stats/html/approxfun.html
 #'
-#' 4. after resampling, bind resampled dataframes back together and re-assign aoi_timepoint_id
+#' 4. after resampling, bind resampled dataframes back together and re-assign
+#' aoi_timepoint_id
 #'
-#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and administration_id
+#' @param df_table to-be-resampled dataframe with t, aoi/xy values, trial_id and
+#'   administration_id
 #'
 #' @param table_type table name, can only be "aoi_timepoints" or "xy_timepoints"
 #'
@@ -171,7 +174,8 @@ normalize_times <- function(df_table) {
 #' @export
 resample_times <- function(df_table, table_type) {
 
-  # first check if this data frame has all the correct columns required for re-sampling
+  # first check if this data frame has all the correct columns required for
+  # re-sampling
   if (table_type == "aoi_timepoints") {
     required_columns <- c("trial_id", "administration_id", "t_norm", "aoi")
   } else if (table_type == "xy_timepoints") {
@@ -182,23 +186,27 @@ resample_times <- function(df_table, table_type) {
   # this is mandatory, comes from our decision that not linking resampling and
   # centering causes a lot of problems
   if (!all(required_columns %in% colnames(df_table))) {
-    stop(paste("Normalize times function requires the following columns to be present in the dataframe:",
-               paste(required_columns, collapse = ', '),
-               ". Times should be re-zeroed and normalized first before being resampled!"))
+    stop(.msg("Resample times function requires the following columns to be
+              present in the dataframe:
+              {paste(required_columns, collapse = ', ')}. Times should be
+              re-zeroed and normalized first before being resampled!"))
   }
 
   # main resampling call
   if (table_type == "aoi_timepoints") {
-    # start resampling process by iterating through every trial within every administration
+    # start resampling process by iterating through every trial within every
+    # administration
     df_out <- df_table %>%
-      dplyr::mutate(admin_trial_id = paste(.data$administration_id, .data$trial_id, sep = "_")) %>%
+      dplyr::mutate(admin_trial_id = paste(.data$administration_id,
+                                           .data$trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
       purrr::map_df(resample_aoi_trial) %>%
       dplyr::arrange(.data$administration_id, .data$trial_id) %>%
       dplyr::mutate(aoi_timepoint_id = 0:(dplyr::n() - 1)) # add IDs
   } else if (table_type == "xy_timepoints") {
     df_out <- df_table %>%
-      dplyr::mutate(admin_trial_id = paste(.data$administration_id, .data$trial_id, sep = "_")) %>%
+      dplyr::mutate(admin_trial_id = paste(.data$administration_id,
+                                           .data$trial_id, sep = "_")) %>%
       split(.$admin_trial_id) %>%
       purrr::map_df(resample_xy_trial) %>%
       dplyr::arrange(.data$administration_id, .data$trial_id) %>%
@@ -235,8 +243,8 @@ add_aois <- function(xy_joined) {
         !is.na(x) & !is.na(y) ~ "other",
         TRUE ~ "missing"),
       aoi = dplyr::case_when(
-        side %in% c("left","right") & side == target_side ~ "target",
-        side %in% c("left","right") & side != target_side ~ "distractor",
+        side %in% c("left", "right") & side == target_side ~ "target",
+        side %in% c("left", "right") & side != target_side ~ "distractor",
         TRUE ~ side # other or NA, which is same as side
       ))
 
@@ -252,20 +260,25 @@ add_aois <- function(xy_joined) {
 round_times <- function(df) {
   # set sample rates
 
-  df %>% dplyr::group_by(.data$administration_id, .data$trial_id) %>%
-  tidyr::nest() %>%
-  dplyr::mutate(
-    data = .data$data %>%
-      purrr::map(function(df) {
-        df_rounded <- df %>%
-          dplyr::mutate(t_zeroed = round(pkg_globals$SAMPLE_DURATION * round(.data$t_zeroed/pkg_globals$SAMPLE_DURATION)))
+  df %>%
+    dplyr::group_by(.data$administration_id, .data$trial_id) %>%
+    tidyr::nest() %>%
+    dplyr::mutate(
+      data = .data$data %>%
+        purrr::map(function(df) {
+          df_rounded <- df %>%
+            dplyr::mutate(
+              t_zeroed = round(pkg_globals$SAMPLE_DURATION *
+                                 round(.data$t_zeroed /
+                                         pkg_globals$SAMPLE_DURATION)))
 
-        t_resampled <- dplyr::tibble(t_zeroed = round(seq(min(df_rounded$t_zeroed),
-                                                           max(df_rounded$t_zeroed),
-                                                           pkg_globals$SAMPLE_DURATION)))
+          t_resampled <- dplyr::tibble(
+            t_zeroed = round(seq(min(df_rounded$t_zeroed),
+                                 max(df_rounded$t_zeroed),
+                                 pkg_globals$SAMPLE_DURATION)))
 
-        dplyr::left_join(t_resampled, df_rounded, by = "t_zeroed") %>%
-          dplyr::group_by(.data$t_zeroed)
-      })) %>%
-  tidyr::unnest(.data$data)
+          dplyr::left_join(t_resampled, df_rounded, by = "t_zeroed") %>%
+            dplyr::group_by(.data$t_zeroed)
+        })) %>%
+    tidyr::unnest(.data$data)
 }

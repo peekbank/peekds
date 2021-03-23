@@ -17,6 +17,7 @@ LazyData: true
 Imports:
   dplyr (>= 1.0.4),
   ggplot2 (>= 3.3.3),
+  glue (>= 1.4.2),
   jsonlite (>= 1.7.2),
   magrittr (>= 2.0.1),
   osfr (>= 0.2.8),

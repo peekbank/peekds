@@ -19,7 +19,8 @@ Is this table required?
 }
 \examples{
 \dontrun{
-is_required <- is_table_required(table_type = "xy_timepoints", coding_method = "manual gaze coding")
+is_required <- is_table_required(table_type = "xy_timepoints",
+                                 coding_method = "manual gaze coding")
 }
 
 }

@@ -9,7 +9,8 @@ put_processed_data(token, dataset_name, path = ".", osf_address = "pr6wu")
 \arguments{
 \item{token}{TODO}
 
-\item{dataset_name}{Specific dataset name occurring in the file hierarchy of the relevant OSF repo.}
+\item{dataset_name}{Specific dataset name occurring in the file hierarchy of
+the relevant OSF repo.}
 
 \item{path}{Where the data live on your own machine.}
 

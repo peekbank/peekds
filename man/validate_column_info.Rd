@@ -7,7 +7,7 @@
 validate_column_info(path_csv)
 }
 \arguments{
-\item{path_csv}{the directory of csv file 'peekbank_column_info.csv'}
+\item{path_csv}{the directory of csv file "peekbank_column_info.csv"}
 }
 \value{
 TRUE only if all the csv files have valid columns
@@ -17,7 +17,7 @@ check the peekbank_column_info csv files against database schema
 }
 \examples{
 \dontrun{
-is_valid = validate_column_info(path_csv = '.')
+is_valid = validate_column_info(path_csv = ".")
 }
 
 }
