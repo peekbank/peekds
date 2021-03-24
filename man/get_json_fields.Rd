@@ -3,21 +3,20 @@
 \name{get_json_fields}
 \alias{get_json_fields}
 \title{Fetching the list of field names and requirements in each table according to
-the peekds json file}
+the schema json file}
 \usage{
 get_json_fields(table_type)
 }
 \arguments{
-\item{table_type}{the type of table, can be one of the following types:
-aoi_timepoints, aoi_region_sets, administrations, subjects, trials,
-datasets, stimuli}
+\item{table_type}{the type of dataframe, for the most updated table types specified
+by schema, please use function list_ds_tables()}
 }
 \value{
-fieldnames -- the list of field names
+the list of field names
 }
 \description{
 Fetching the list of field names and requirements in each table according to
-the peekds json file
+the schema json file
 }
 \examples{
 \dontrun{

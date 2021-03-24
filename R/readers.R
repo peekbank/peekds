@@ -1,6 +1,6 @@
 #' parse json file from peekbank github into a dataframe
 #'
-#' @return peekjson -- the organized dataframe from json file
+#' @return the organized dataframe from schema json file
 #'
 #' @examples
 #' \dontrun{
@@ -14,13 +14,12 @@ get_peekjson <- function() {
 }
 
 #' Fetching the list of field names and requirements in each table according to
-#' the peekds json file
+#' the schema json file
 #'
-#' @param table_type the type of table, can be one of the following types:
-#'   aoi_timepoints, aoi_region_sets, administrations, subjects, trials,
-#'   datasets, stimuli
+#' @param table_type the type of dataframe, for the most updated table types specified
+#'                   by schema, please use function list_ds_tables()
 #'
-#' @return fieldnames -- the list of field names
+#' @return the list of field names
 #'
 #' @examples
 #' \dontrun{
@@ -44,18 +43,16 @@ get_json_fields <- function(table_type) {
   fields_json <- peekjson[which(peekjson$table == table_type), "fields"]
   fields_json <- fields_json[[1]]
 
-  # add "_id" to all the foreign key field names
-  # e.g. subject -> subject_id
-  # mask_fkey <- fields_json$field_class == "ForeignKey"
-  # colnames_json[mask_fkey] <- paste0(colnames_json[mask _fkey], "_id")
   return(fields_json)
 }
 
-#' List the tables required for datasets with different coding method
+#' List the tables required based on coding method
 #'
-#' @param coding_method character TODO
+#' @param coding_method a string indicating method used in the experiment for coding gaze data,
+#'                      to get the list of current coding methods, please use
+#'                      function list_coding_methods()
 #'
-#' @return TODO
+#' @return a list of table types that are required based on input coding method
 #'
 #' @examples
 #' \dontrun{
@@ -66,6 +63,7 @@ get_json_fields <- function(table_type) {
 list_ds_tables <- function(coding_method = "eyetracking") {
   # get json file from github
   peekjson <- get_peekjson()
+  # get the list of tables other than admin
   table_list <- peekjson$table
   table_list_auto <- table_list[table_list != "admin"]
 
@@ -85,9 +83,14 @@ list_ds_tables <- function(coding_method = "eyetracking") {
   return(table_list)
 }
 
-#' Get coding method list from json file
+#' Get the coding method list from json schema file
 #'
-#' @return TODO
+#' @return a list of strings indicating allowed coding methods
+#'
+#' @examples
+#' \dontrun{
+#' coding_methods <- list_coding_methods()
+#' }
 #' @export
 list_coding_methods <- function() {
   fields_json <- get_json_fields(table_type = "administrations")
@@ -98,19 +101,21 @@ list_coding_methods <- function() {
   return(methods_json)
 }
 
-#' Is this table required?
+#' Check if a certain table is required according to schema
 #'
-#' @param table_type character TODO
-#' @param coding_method character TODO
+#' @param table_type the type of dataframe, for the most updated table types specified
+#'                   by schema, please use function list_ds_tables()
+#' @param coding_method method used in the experiment for coding gaze data,
+#'                      to get the list of current coding methods, please use
+#'                      function list_coding_methods()
 #'
-#' @return TODO
+#' @return A boolean value
 #'
 #' @examples
 #' \dontrun{
 #' is_required <- is_table_required(table_type = "xy_timepoints",
 #'                                  coding_method = "manual gaze coding")
 #' }
-#'
 #' @export
 is_table_required <- function(table_type, coding_method) {
   table_list <- list_ds_tables(coding_method)
@@ -120,7 +125,7 @@ is_table_required <- function(table_type, coding_method) {
 
 #' List current allowed language choices for db import
 #'
-#' @return language_list TODO
+#' @return a list of strings containing all the allowed language codes based on json schema file
 #'
 #' @examples
 #' \dontrun{
@@ -138,9 +143,9 @@ list_language_choices <- function() {
   return(language_list)
 }
 
-#' Function for map raw data columns to processed table columns
+#' Function for mapping raw data columns to processed table columns
 #'
-#' @param raw_data raw dara frame
+#' @param raw_data raw data frame
 #' @param raw_format source of the eye-tracking data, e.g. "tobii"
 #' @param table_type type of processed table, e.g. "xy_data" | "aoi_table"
 #'
@@ -201,485 +206,3 @@ map_columns <- function(raw_data, raw_format, table_type) {
 
   return(df_table)
 }
-
-
-#' supporting function for saving processed table as csv files in
-#' processed_data/
-#'
-#' @param df_procd processed data frame
-#' @param table_type type of table to be saved
-#'
-#' @export
-save_table <- function(df_procd, table_type) {
-  # because of the standardized data structure, processed csvs need to be under
-  # "[dataset_name]/processed_data"
-  dir_procd <- "../processed_data"
-
-  # save processed data table in csv file
-  # create dir for saving processed data if this directory does not exist
-  if (!file.exists(dir_procd)) {
-    dir.create(dir_procd)
-  }
-  utils::write.csv(df_procd, file.path(
-    dir_procd, paste(table_type, ".csv", sep = "")), row.names = FALSE)
-}
-
-# filter_eyetracking
-# average
-# universal function for converting orgin coordinates
-
-#' Process directory of raw data to xy data
-#'
-#' @param format One of "tobii", "smi", "eyelink"
-#' @param dir Directory with raw data
-#'
-#' @return TODO
-#'
-#' @export
-process_to_xy <- function(format, dir) {
-  # can be changed to process_smi_xy or for any dataset that needs to average
-  # xy data in order to xy_data table
-  # 1. average
-  # 2. filter out of range data
-
-  readers <- list(
-    "tobii" = process_tobii,
-    "smi" = process_smi
-    # "eyelink" = process_eyelink
-  )
-  stopifnot(format %in% names(readers))
-  reader <- readers[format]
-  reader(dir)
-}
-
-#' Create empty table
-#'
-#' @param table_type character TODO
-#'
-#' @return TODO
-#' @export
-create_emtpy_table <- function(table_type) {
-  # # fetch the required columns from json file
-  # colnames_json <- get_json_colnames(table_type)
-  # # create emtpy df
-  # df_table <- utils::read.csv(text = paste0(colnames_json, collapse = ","))
-  # # add NA values
-  # df_table[1,] = c(0, rep(NA, length(colnames_json)-1))
-  # return(df_table)
-}
-
-
-#' Process tobii raw data
-#' dataset specific: datasets
-#'
-#' @param dir_raw Directory with raw data
-#' @param dataset_name TODO
-#' @param dataset_type TODO
-#'
-#' @export
-process_tobii <- function(dir_raw, dataset_name = "sample_data",
-                          dataset_type = "automated") {
-  raw_format <- "tobii"
-  # list all the files under the directory
-  file_raw <- list.files(path = dir_raw,
-                         pattern = "*data*.tsv",
-                         all.files = FALSE)
-
-  # read in raw data frame from file oi
-  raw_data <- utils::read.table(file = file.path(dir_raw, file_raw),
-                                sep = "\t",
-                                header = TRUE)
-
-  # Start processing table by table type
-  ######## DATASETS ########
-  table_type <- "datasets"
-  if (is_table_required(table_type, dataset_type)) {
-    ## [monitor_size_x], [monitor_size_y]
-    # get the unique monitor sizes
-    monitor_size_str <- raw_data[["RecordingResolution"]] %>%
-      unique()  %>%
-      stats::na.omit() %>%
-      as.vector()
-    # when multiple monitor size, just pick one
-    if (length(monitor_size_str) > 1) {
-      monitor_size_str <- monitor_size_str[1]
-      warning(.msg("Dataset {dataset_name} has multiple monitor sizes, only
-                   {monitor_size_str} will be saved."))
-    }
-    # extract numeric values from list
-    monitor_size <- regmatches(monitor_size_str,
-                               gregexpr("[[:digit:]]+", monitor_size_str))
-    monitor_size <- monitor_size[[1]]
-    monitor_size_x <- as.numeric(monitor_size[1])
-    monitor_size_y <- as.numeric(monitor_size[2])
-
-    ## [sample_rate]
-    sample_timestamp <- raw_data[["RecordingTimestamp"]] %>%
-      as.vector()
-    sample_steps <- sample_timestamp[-1] -
-      sample_timestamp[-length(sample_timestamp)]
-    sample_rate <- 1000 / mean(sample_steps)
-
-    df_datasets <- data.frame(dataset_id = 0,
-                              monitor_size_x = monitor_size_x,
-                              monitor_size_y = monitor_size_y,
-                              sample_rate = sample_rate,
-                              tracker = "tobii",
-                              lab_dataset_id = dataset_name)
-
-    # validate against json, if valid, then save csv
-    if (validate_table(df_datasets, table_type)) {
-      save_table(df_datasets, table_type)
-    } # no else error message, because that will be handled by validator.R
-  }
-
-  ######## AOI_REGIONS ########
-  table_type <- "aoi_regions"
-  if (is_table_required(table_type, dataset_type)) {
-    # find the roi region file under dir_raw
-    file_aoi <- list.files(path = dir_raw,
-                           pattern = "*aoi*",
-                           all.files = FALSE)
-
-    if (length(file_aoi) != 0) {
-      file_aoi <- file.path(dir_raw, file_aoi)
-      has_aoi_info <- file.exists(file_aoi)
-    } else {
-      has_aoi_info <- FALSE
-    }
-    if (has_aoi_info) {
-      df_aoi <- utils::read.table(file_aoi, header = TRUE, sep = "")
-      aoi_id <- seq(0, (nrow(df_aoi) - 1))
-      df_aoi[["aoi_region_id"]] <- c(aoi_id)
-    } else {
-      stop(.msg("Cannot find aoi_regions info file {file_aoi}."))
-    }
-
-    # validate against json, if valid, then save csv
-    if (validate_table(df_aoi, table_type)) {
-      save_table(df_aoi, table_type)
-    } # no else error message, because that will be handled by validator.R
-  }
-
-  ######## TRIALS ########
-  table_type <- "trials"
-  if (is_table_required(table_type, dataset_type)) {
-    # find the trial file under dir_raw
-    file_trials <- list.files(path = dir_raw,
-                              pattern = "*trial*",
-                              all.files = FALSE)
-    if (length(file_trials) != 0) {
-      file_trials <- file.path(dir_raw, file_trials)
-      has_trial_info <- file.exists(file_trials)
-    } else {
-      has_trial_info <- FALSE
-    }
-    if (has_trial_info) {
-      df_trials <- utils::read.table(file_trials, header = TRUE, sep = "")
-      trial_id <- seq(0, (nrow(df_trials) - 1))
-      df_trials[["trial_id"]] <- c(trial_id)
-    } else {
-      stop(.msg("Cannot find trial_info file {file_trials}."))
-    }
-
-    # validate against json, if valid, then save csv
-    if (validate_table(df_trials, table_type)) {
-      save_table(df_trials, table_type)
-    } # no else error message, because that will be handled by validator.R
-  }
-
-  ######## TRIAL TYPES ########
-  table_type <- "trial_types"
-  if (is_table_required(table_type, dataset_type)) {
-    # find the trial file under dir_raw
-    file_trial_types <- list.files(path = dir_raw,
-                                   pattern = "*trial_type*",
-                                   all.files = FALSE)
-    if (length(file_trials) != 0) {
-      file_trials <- file.path(dir_raw, file_trial_types)
-      has_trial_type_info <- file.exists(file_trial_types)
-    } else {
-      has_trial_type_info <- FALSE
-    }
-    if (has_trial_type_info) {
-      df_trials <- utils::read.table(file_trial_types, header = TRUE, sep = "")
-      trial_id <- seq(0, (nrow(df_trials) - 1))
-      df_trials[["trial_id"]] <- c(trial_id)
-    } else {
-      stop(.msg("Cannot find trial_type file {file_trial_types}."))
-    }
-
-    # validate against json, if valid, then save csv
-    if (validate_table(df_trials, table_type)) {
-      save_table(df_trials, table_type)
-    } # no else error message, because that will be handled by validator.R
-  }
-
-  ######## SUBJECTS ########
-  table_type <- "subjects"
-  if (is_table_required(table_type, dataset_type)) {
-    # fetch relavant columns from raw data file
-    df_subjects <- map_columns(raw_data, raw_format, table_type)
-
-    # get the unique subjects in the raw table
-    # + generate primary key for subjects table
-    df_subjects <- dplyr::distinct(df_subjects)
-    subject_id <- seq(0, (nrow(df_subjects) - 1))
-    df_subjects[["subject_id"]] <- c(subject_id)
-
-    # validate against json, if valid, then save csv
-    if (validate_table(df_subjects, table_type)) {
-      save_table(df_subjects, table_type)
-    } # no else error message, because that will be handled by validator.R
-  }
-
-  ######## XY_DATA ########
-  table_type <- "xy_data"
-  if (is_table_required(table_type, dataset_type)) {
-    # fetch relavant columns from raw data file
-    df_xy <- map_columns(raw_data, raw_format, table_type)
-
-    # replace 'subject_id', 'trial_id' to unique integer keys
-    xy_data_id <- seq(0, (nrow(df_xy) - 1))
-    df_xy[["xy_data_id"]] <- c(xy_data_id)
-
-    # validate against json, if valid, then save csv
-    if (validate_table(df_xy, table_type)) {
-      save_table(df_xy, table_type)
-    } # no else error message, because that will be handled by validator.R
-  }
-
-  ######## AOI_DATA ########
-  table_type <- "aoi_data"
-  if (is_table_required(table_type, dataset_type)) {
-    # fetch relavant columns from raw data file
-    df_aoi <- map_columns(raw_data, raw_format, table_type)
-
-    # replace 'subject_id', 'trial_id' to unique integer keys
-    aoi_data_id <- seq(0, (nrow(df_aoi) - 1))
-    df_aoi[["aoi_data_id"]] <- c(aoi_data_id)
-
-    # validate against json, if valid, then save csv
-    if (validate_table(df_aoi, table_type)) {
-      save_table(df_aoi, table_type)
-    } # no else error message, because that will be handled by validator.R
-  }
-}
-
-
-#' Process an individual smi raw data file
-#'
-#' @param x character, filename
-#' @param dir character, directory
-#' @param stims_to_remove_chars character, e.g. ".avi"
-#' @param stims_to_keep_chars character, e.g. "_"
-#' @param possible_delims character vector
-#' @param stimulus_coding character
-#'
-#' @return TODO
-#' @export
-process_smi_file <- function(x, dir, stims_to_remove_chars = c(".avi"),
-                             stims_to_keep_chars = c("_"),
-                             possible_delims = c("\t", ","),
-                             stimulus_coding = "stim_column") {
-
-  # general parameters
-  max_lines_search <- 40 # comments from initial header of smi eyetracking file
-  subid_name <- "Subject"
-  monitor_size <- "Calibration Area"
-  sample_rate <- "Sample Rate"
-  left_x_col_name <- "L POR X [px]" # TODO: unused?
-  right_x_col_name <- "R POR X [px]" # TODO: unused?
-  left_y_col_name <- "L POR Y [px]" # TODO: unused?
-  right_y_col_name <- "R POR Y [px]" # TODO: unused?
-
-  # create file path
-  file_path <- paste0(dir, "/", x)
-
-  # guess delimiter
-  sep <- reader::get.delim(file_path, comment = "#", delims = possible_delims,
-                           skip = max_lines_search)
-
-  # extract information about subject, monitor size, and sample rate from header
-  subject_id <- readr::read_lines(file_path, n_max = max_lines_search) %>%
-    stringr::str_subset(subid_name) %>%
-    stringr::str_extract(paste("(?<=", subid_name, ":\\t).*", sep = "")) %>%
-    trimws()
-
-  monitor_size <- readr::read_lines(file_path, n_max = max_lines_search) %>%
-    stringr::str_subset(monitor_size) %>%
-    stringr::str_extract(paste("(?<=", monitor_size, ":\\t).*", sep = "")) %>%
-    trimws() %>%
-    stringr::str_replace("\t", "x")
-
-  sample_rate <- readr::read_lines(file_path, n_max = max_lines_search) %>%
-    stringr::str_subset(sample_rate) %>%
-    stringr::str_extract(paste("(?<=", sample_rate, ":\\t).*", sep = "")) %>%
-    trimws()
-
-  # get maximum x-y coordinates on screen
-  screen_xy <- stringr::str_split(monitor_size, "x") %>%
-    unlist()
-  x_max <- as.numeric(as.character(screen_xy[1]))
-  y_max <- as.numeric(as.character(screen_xy[2]))
-
-  # read in data
-  data <-
-    readr::read_delim(
-      file_path,
-      comment = "##",
-      delim = sep
-    )
-
-  # select and rename columns
-  data <-  data %>%
-    dplyr::rename(
-      raw_t = "Time",
-      lx = .data$left_x_col_name,
-      rx = .data$right_x_col_name,
-      ly = .data$left_y_col_name,
-      ry = .data$right_y_col_name
-    )
-
-  # select rows for xy file
-  data <- data %>%
-    dplyr::filter(
-      # remove anything that isn't actually collecting ET data
-      .data$Type == "SMP",
-      # remove calibration
-      .data$Stimulus != "-",
-      # remove anything that isn't actually a trial based on specific characters
-      !grepl(paste(stims_to_remove_chars, collapse = "|"), .data$Stimulus),
-      # from here, keep only trials fitting desired patters
-      grepl(paste(stims_to_keep_chars, collapse = "|"), .data$Stimulus))
-
-  # add sub_id column (extracted from data file)
-  data <- data %>%
-    dplyr::mutate(subject_id = .data$subject_id)
-
-  #### General eyetracking data processing
-
-  ## Remove out of range looks
-  data <- data %>%
-    dplyr::mutate(
-      rx = dplyr::if_else(.data$rx <= 0 | .data$rx >= x_max,
-                          NA_real_, .data$rx),
-      lx = dplyr::if_else(.data$lx <= 0 | .data$lx >= x_max,
-                          NA_real_, .data$lx),
-      ry = dplyr::if_else(.data$ry <= 0 | .data$ry >= y_max,
-                          NA_real_, .data$ry),
-      ly = dplyr::if_else(.data$ly <= 0 | .data$ly >= y_max,
-                          NA_real_, .data$ly)
-    )
-
-  ## Average left-right x-y coordinates
-  # Take one eye's measurements if we only have one; otherwise average them
-  data <-
-    data %>%
-    dplyr::mutate(
-      x = dplyr::case_when(
-        is.na(rx) & !is.na(lx) ~ lx,
-        !is.na(rx) & is.na(lx) ~ rx,
-        !is.na(rx) & !is.na(lx) ~ (rx + lx) / 2,
-        is.na(rx) & is.na(lx) ~ NA_real_
-      ),
-      y = dplyr::case_when(
-        is.na(ry) & !is.na(ly) ~ ly,
-        !is.na(ry) & is.na(ly) ~ ry,
-        !is.na(ry) & !is.na(ly) ~ (ry + ly) / 2,
-        is.na(ry) & is.na(ly) ~ NA_real_
-      )
-    ) %>%
-    dplyr::select(
-      -.data$rx, -.data$ry, -.data$lx, -.data$ly
-    )
-
-  ## Convert time into ms starting from 0
-  data <- data %>%
-    dplyr::mutate(
-      timestamp = round((.data$raw_t - .data$raw_t[1]) / 1000, 3)
-    )
-
-  ## Redefine coordinate origin (0,0)
-  # SMI starts from top left
-  # Here we convert the origin of the x,y coordinate to be bottom left (by
-  # "reversing" y-coordinate origin)
-  data <- data %>%
-    dplyr::mutate(
-      y = y_max - .data$y
-    )
-
-  # If trials are identified via a Stimulus column, determine trials and
-  # redefine time based on trial onsets
-  if (stimulus_coding == "stim_column") {
-
-    # Redefine trials based on stimuli rather than SMI output
-    # check if previous stimulus value is equal to current value; ifelse, trial
-    # test increases by 1
-    data <- data %>%
-      dplyr::mutate(stim_lag = dplyr::lag(.data$Stimulus),
-                    temp = ifelse(.data$Stimulus != .data$stim_lag, 1, 0),
-                    temp_id = cumsum(c(0, .data$temp[!is.na(.data$temp)])),
-                    trial_id = 1 + .data$temp_id)
-
-    # set time to zero at the beginning of each trial
-    data <- data %>%
-      dplyr::group_by(.data$trial_id) %>%
-      dplyr::mutate(t = .data$timestamp - min(.data$timestamp))
-  }
-
-  # extract final columns
-  xy_data <- data %>%
-    dplyr::select(.data$sub_id, .data$x, .data$y, .data$t, .data$trial_id,
-                  .data$Stimulus)
-
-  ## Make dataset table
-  dataset_data <- data.frame(id = "refword",
-                             tracker = "SMI",
-                             monitor_size = monitor_size,
-                             sample_rate = sample_rate)
-
-  return(list(xy = xy_data, dataset = dataset_data))
-
-}
-
-
-#' Process smi raw data
-#'
-#' @param dir Directory with raw data
-#' @param file_ext TODO
-#'
-#' @export
-process_smi <- function(dir, file_ext = ".txt") {
-
-  # list files in directory
-  all_files <- list.files(path = dir,
-                          pattern = paste0("*", file_ext),
-                          all.files = FALSE)
-
-  # process individual smi files
-  all_data <- lapply(all_files, process_smi_file, dir = dir)
-
-  # extract specific datasets from the processed data
-  xy_data <- all_data %>%
-    purrr::map("xy") %>%
-    dplyr::bind_rows()
-
-  dataset_data <- all_data %>%
-    purrr::map("dataset") %>%
-    dplyr::bind_rows()
-
-  # save data
-  save_table(xy_data, table_type = "xy_data")
-  save_table(dataset_data, table_type = "dataset")
-
-}
-
-# Process eyelink raw data
-#
-# @param dir Directory with raw data
-#
-# @export
-# process_eyelink <- function(dir) {
-#
-# }

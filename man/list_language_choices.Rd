@@ -7,7 +7,7 @@
 list_language_choices()
 }
 \value{
-language_list TODO
+a list of strings containing all the allowed language codes based on json schema file
 }
 \description{
 List current allowed language choices for db import

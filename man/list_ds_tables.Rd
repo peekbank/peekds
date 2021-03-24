@@ -2,18 +2,20 @@
 % Please edit documentation in R/readers.R
 \name{list_ds_tables}
 \alias{list_ds_tables}
-\title{List the tables required for datasets with different coding method}
+\title{List the tables required based on coding method}
 \usage{
 list_ds_tables(coding_method = "eyetracking")
 }
 \arguments{
-\item{coding_method}{character TODO}
+\item{coding_method}{a string indicating method used in the experiment for coding gaze data,
+to get the list of current coding methods, please use
+function list_coding_methods()}
 }
 \value{
-TODO
+a list of table types that are required based on input coding method
 }
 \description{
-List the tables required for datasets with different coding method
+List the tables required based on coding method
 }
 \examples{
 \dontrun{

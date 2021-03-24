@@ -216,23 +216,13 @@ resample_times <- function(df_table, table_type) {
   return(df_out)
 }
 
-# Normalize time by point of disambiguation
-# obslate
-# center_times <- function(df) {
-#   # center timestamp (0 POD)
-#   df_out <- df %>%
-#     dplyr::group_by(administration_id, trial_id) %>%
-#     dplyr::mutate(t_norm = (t - t[1]) - point_of_disambiguation) %>%
-#     dplyr::select(-t)
-#   return(df_out)
-# }
-
-
 #' Add AOIs to an xy dataframe
 #'
-#' @param xy_joined TODO
+#' @param xy_joined dataframe containing processed xy timepoints with aoi region sets information
 #'
-#' @return TODO
+#' @return dataframe with two added columns 'side' and 'aoi'.
+#'         'side' only contains "left" or "right" value
+#'         'aoi' indicates whether this xy timepoint is looking to "target" or "distractor"
 #' @export
 add_aois <- function(xy_joined) {
   xy_joined %<>%
@@ -249,36 +239,4 @@ add_aois <- function(xy_joined) {
       ))
 
   return(xy_joined)
-}
-
-#' Round times to our specified sample rate to be consistent across labs
-#'
-#' @param df df that has subject_id, dataset_id, trial_id and times
-#'
-#' @return TODO
-#' @export
-round_times <- function(df) {
-  # set sample rates
-
-  df %>%
-    dplyr::group_by(.data$administration_id, .data$trial_id) %>%
-    tidyr::nest() %>%
-    dplyr::mutate(
-      data = .data$data %>%
-        purrr::map(function(df) {
-          df_rounded <- df %>%
-            dplyr::mutate(
-              t_zeroed = round(pkg_globals$SAMPLE_DURATION *
-                                 round(.data$t_zeroed /
-                                         pkg_globals$SAMPLE_DURATION)))
-
-          t_resampled <- dplyr::tibble(
-            t_zeroed = round(seq(min(df_rounded$t_zeroed),
-                                 max(df_rounded$t_zeroed),
-                                 pkg_globals$SAMPLE_DURATION)))
-
-          dplyr::left_join(t_resampled, df_rounded, by = "t_zeroed") %>%
-            dplyr::group_by(.data$t_zeroed)
-        })) %>%
-    tidyr::unnest(.data$data)
 }

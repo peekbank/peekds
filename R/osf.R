@@ -47,7 +47,7 @@ get_processed_data <- function(lab_dataset_id, path = ".",
 
 #' Put processed data for specific peekbank dataset on OSF
 #'
-#' @param token TODO
+#' @param token personal access tokens for uploading to OSF
 #' @param dataset_name Specific dataset name occurring in the file hierarchy of
 #'   the relevant OSF repo.
 #' @param path Where the data live on your own machine.

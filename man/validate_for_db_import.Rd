@@ -13,9 +13,9 @@ the path should end in "processed_data"}
 \item{file_ext}{the default is ".csv"}
 }
 \value{
-msg_error_all if not all tables passed the validator,
-               the returned variable contains a list of messages
-               about issues to be corrected
+an empty string if all tables passed the validator;
+        otherwise, the function returns a list of messages
+        describing detailed issues that needs to be fixed
 }
 \description{
 check all csv files against database schema for database import

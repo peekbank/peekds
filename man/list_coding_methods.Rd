@@ -2,13 +2,18 @@
 % Please edit documentation in R/readers.R
 \name{list_coding_methods}
 \alias{list_coding_methods}
-\title{Get coding method list from json file}
+\title{Get the coding method list from json schema file}
 \usage{
 list_coding_methods()
 }
 \value{
-TODO
+a list of strings indicating allowed coding methods
 }
 \description{
-Get coding method list from json file
+Get the coding method list from json schema file
+}
+\examples{
+\dontrun{
+coding_methods <- list_coding_methods()
+}
 }

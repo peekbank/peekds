@@ -2,25 +2,27 @@
 % Please edit documentation in R/readers.R
 \name{is_table_required}
 \alias{is_table_required}
-\title{Is this table required?}
+\title{Check if a certain table is required according to schema}
 \usage{
 is_table_required(table_type, coding_method)
 }
 \arguments{
-\item{table_type}{character TODO}
+\item{table_type}{the type of dataframe, for the most updated table types specified
+by schema, please use function list_ds_tables()}
 
-\item{coding_method}{character TODO}
+\item{coding_method}{method used in the experiment for coding gaze data,
+to get the list of current coding methods, please use
+function list_coding_methods()}
 }
 \value{
-TODO
+A boolean value
 }
 \description{
-Is this table required?
+Check if a certain table is required according to schema
 }
 \examples{
 \dontrun{
 is_required <- is_table_required(table_type = "xy_timepoints",
                                  coding_method = "manual gaze coding")
 }
-
 }

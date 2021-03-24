@@ -7,7 +7,7 @@
 get_peekjson()
 }
 \value{
-peekjson -- the organized dataframe from json file
+the organized dataframe from schema json file
 }
 \description{
 parse json file from peekbank github into a dataframe

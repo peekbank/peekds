@@ -2,12 +2,12 @@
 % Please edit documentation in R/readers.R
 \name{map_columns}
 \alias{map_columns}
-\title{Function for map raw data columns to processed table columns}
+\title{Function for mapping raw data columns to processed table columns}
 \usage{
 map_columns(raw_data, raw_format, table_type)
 }
 \arguments{
-\item{raw_data}{raw dara frame}
+\item{raw_data}{raw data frame}
 
 \item{raw_format}{source of the eye-tracking data, e.g. "tobii"}
 
@@ -17,7 +17,7 @@ map_columns(raw_data, raw_format, table_type)
 processed data frame with specified column names
 }
 \description{
-Function for map raw data columns to processed table columns
+Function for mapping raw data columns to processed table columns
 }
 \examples{
 \dontrun{
