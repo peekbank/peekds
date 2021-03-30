@@ -7,7 +7,8 @@
 list_language_choices()
 }
 \value{
-a list of strings containing all the allowed language codes based on json schema file
+a list of strings containing all the allowed language codes based on
+  json schema file
 }
 \description{
 List current allowed language choices for db import

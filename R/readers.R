@@ -16,8 +16,8 @@ get_peekjson <- function() {
 #' Fetching the list of field names and requirements in each table according to
 #' the schema json file
 #'
-#' @param table_type the type of dataframe, for the most updated table types specified
-#'                   by schema, please use function list_ds_tables()
+#' @param table_type the type of dataframe, for the most updated table types
+#'   specified by schema, please use function list_ds_tables()
 #'
 #' @return the list of field names
 #'
@@ -35,8 +35,7 @@ get_json_fields <- function(table_type) {
 
   # check if the input table_type is valid
   if (!(table_type %in% table_list)) {
-    warning(.msg("Cannot recognize the table type {table_type."))
-    return(NULL)
+    stop(.msg("Cannot recognize the table type {table_type}."))
   }
 
   # get the list of column names in json
@@ -48,9 +47,9 @@ get_json_fields <- function(table_type) {
 
 #' List the tables required based on coding method
 #'
-#' @param coding_method a string indicating method used in the experiment for coding gaze data,
-#'                      to get the list of current coding methods, please use
-#'                      function list_coding_methods()
+#' @param coding_method a string indicating method used in the experiment for
+#'   coding gaze data, to get the list of current coding methods, please use
+#'   function list_coding_methods()
 #'
 #' @return a list of table types that are required based on input coding method
 #'
@@ -103,11 +102,11 @@ list_coding_methods <- function() {
 
 #' Check if a certain table is required according to schema
 #'
-#' @param table_type the type of dataframe, for the most updated table types specified
-#'                   by schema, please use function list_ds_tables()
-#' @param coding_method method used in the experiment for coding gaze data,
-#'                      to get the list of current coding methods, please use
-#'                      function list_coding_methods()
+#' @param table_type the type of dataframe, for the most updated table types
+#'   specified by schema, please use function list_ds_tables()
+#' @param coding_method method used in the experiment for coding gaze data, to
+#'   get the list of current coding methods, please use function
+#'   list_coding_methods()
 #'
 #' @return A boolean value
 #'
@@ -125,7 +124,8 @@ is_table_required <- function(table_type, coding_method) {
 
 #' List current allowed language choices for db import
 #'
-#' @return a list of strings containing all the allowed language codes based on json schema file
+#' @return a list of strings containing all the allowed language codes based on
+#'   json schema file
 #'
 #' @examples
 #' \dontrun{

@@ -218,11 +218,12 @@ resample_times <- function(df_table, table_type) {
 
 #' Add AOIs to an xy dataframe
 #'
-#' @param xy_joined dataframe containing processed xy timepoints with aoi region sets information
+#' @param xy_joined dataframe containing processed xy timepoints with aoi region
+#'   sets information
 #'
-#' @return dataframe with two added columns 'side' and 'aoi'.
-#'         'side' only contains "left" or "right" value
-#'         'aoi' indicates whether this xy timepoint is looking to "target" or "distractor"
+#' @return dataframe with two added columns 'side' and 'aoi'. 'side' only
+#'   contains "left" or "right" value 'aoi' indicates whether this xy timepoint
+#'   is looking to "target" or "distractor"
 #' @export
 add_aois <- function(xy_joined) {
   xy_joined %<>%

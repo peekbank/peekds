@@ -7,8 +7,8 @@
 list_ds_tables(coding_method = "eyetracking")
 }
 \arguments{
-\item{coding_method}{a string indicating method used in the experiment for coding gaze data,
-to get the list of current coding methods, please use
+\item{coding_method}{a string indicating method used in the experiment for
+coding gaze data, to get the list of current coding methods, please use
 function list_coding_methods()}
 }
 \value{

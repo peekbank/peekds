@@ -8,8 +8,8 @@ the schema json file}
 get_json_fields(table_type)
 }
 \arguments{
-\item{table_type}{the type of dataframe, for the most updated table types specified
-by schema, please use function list_ds_tables()}
+\item{table_type}{the type of dataframe, for the most updated table types
+specified by schema, please use function list_ds_tables()}
 }
 \value{
 the list of field names

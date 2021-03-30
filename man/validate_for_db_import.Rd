@@ -7,15 +7,15 @@
 validate_for_db_import(dir_csv, file_ext = ".csv")
 }
 \arguments{
-\item{dir_csv}{the folder directory containing all the csv files,
-the path should end in "processed_data"}
+\item{dir_csv}{the folder directory containing all the csv files, the path
+should end in "processed_data"}
 
 \item{file_ext}{the default is ".csv"}
 }
 \value{
-an empty string if all tables passed the validator;
-        otherwise, the function returns a list of messages
-        describing detailed issues that needs to be fixed
+an empty string if all tables passed the validator; otherwise, the
+  function returns a list of messages describing detailed issues that needs
+  to be fixed
 }
 \description{
 check all csv files against database schema for database import

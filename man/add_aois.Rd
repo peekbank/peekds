@@ -7,12 +7,13 @@
 add_aois(xy_joined)
 }
 \arguments{
-\item{xy_joined}{dataframe containing processed xy timepoints with aoi region sets information}
+\item{xy_joined}{dataframe containing processed xy timepoints with aoi region
+sets information}
 }
 \value{
-dataframe with two added columns 'side' and 'aoi'.
-        'side' only contains "left" or "right" value
-        'aoi' indicates whether this xy timepoint is looking to "target" or "distractor"
+dataframe with two added columns 'side' and 'aoi'. 'side' only
+  contains "left" or "right" value 'aoi' indicates whether this xy timepoint
+  is looking to "target" or "distractor"
 }
 \description{
 Add AOIs to an xy dataframe

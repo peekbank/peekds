@@ -18,7 +18,9 @@ pkg_globals$SCHEMA_FILE <- file.path("https://raw.githubusercontent.com",
                                      "langcog/peekbank/master/static",
                                      "peekbank-schema.json")
 
-.msg <- function(s) strwrap(prefix = " ", initial = "", glue(s))
+.msg <- function(s) {
+  strwrap(prefix = " ", initial = "", glue(s, .envir = parent.frame()))
+}
 
 # Get the mode (respecting NAs)
 # https://stackoverflow.com/questions/2547402/is-there-a-built-in-function-for-finding-the-mode

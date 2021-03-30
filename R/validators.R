@@ -1,11 +1,13 @@
-#' Check if a dataframe/table is compliant to peekbank json before database import
+#' Check if a dataframe/table is compliant to peekbank json before database
+#' import
 #'
 #' @param df_table the dataframe to be saved
-#' @param table_type the type of dataframe, for the most updated table types specified
-#'                   by schema, please use function list_ds_tables()
+#' @param table_type the type of dataframe, for the most updated table types
+#'   specified by schema, please use function list_ds_tables()
 #'
 #' @return TRUE when the input data frame is compliant with json specification,
-#'         such as having all the required columns, primary key field has unique values, etc.
+#'   such as having all the required columns, primary key field has unique
+#'   values, etc.
 #'
 #' @examples
 #' \dontrun{
@@ -150,13 +152,13 @@ validate_table <- function(df_table, table_type) {
 
 #' check all csv files against database schema for database import
 #'
-#' @param dir_csv the folder directory containing all the csv files,
-#'                the path should end in "processed_data"
+#' @param dir_csv the folder directory containing all the csv files, the path
+#'   should end in "processed_data"
 #' @param file_ext the default is ".csv"
 #'
-#' @return an empty string if all tables passed the validator;
-#'         otherwise, the function returns a list of messages
-#'         describing detailed issues that needs to be fixed
+#' @return an empty string if all tables passed the validator; otherwise, the
+#'   function returns a list of messages describing detailed issues that needs
+#'   to be fixed
 #'
 #' @examples
 #' \dontrun{

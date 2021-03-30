@@ -2,22 +2,25 @@
 % Please edit documentation in R/validators.R
 \name{validate_table}
 \alias{validate_table}
-\title{Check if a dataframe/table is compliant to peekbank json before database import}
+\title{Check if a dataframe/table is compliant to peekbank json before database
+import}
 \usage{
 validate_table(df_table, table_type)
 }
 \arguments{
 \item{df_table}{the dataframe to be saved}
 
-\item{table_type}{the type of dataframe, for the most updated table types specified
-by schema, please use function list_ds_tables()}
+\item{table_type}{the type of dataframe, for the most updated table types
+specified by schema, please use function list_ds_tables()}
 }
 \value{
 TRUE when the input data frame is compliant with json specification,
-        such as having all the required columns, primary key field has unique values, etc.
+  such as having all the required columns, primary key field has unique
+  values, etc.
 }
 \description{
-Check if a dataframe/table is compliant to peekbank json before database import
+Check if a dataframe/table is compliant to peekbank json before database
+import
 }
 \examples{
 \dontrun{
