@@ -65,7 +65,7 @@ validate_table <- function(df_table, table_type) {
     }
 
     # step 2: check if values are in the required type/format
-    if (!fieldoptions$null & fieldclass == "IntegerField") {
+    if (!fieldoptions$null & (fieldclass == "IntegerField" | fieldclass == "ForeignKey")) {
       is_type_valid <- is.integer(content_tb)
       if (!is_type_valid) {
         msg_new <- .msg("- Column {fieldname} should contain integers only.")
