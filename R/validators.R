@@ -30,9 +30,11 @@ validate_table <- function(df_table, table_type) {
 
     idx_tb <- match(fieldname, colnames_table)
     is_primary <- isTRUE(fieldoptions$primary_key)
-    is_field_missing <- is.na(idx_tb) & !fieldoptions$null
+    is_null_allowed <- fieldoptions$null
+    is_field_missing <- is.na(idx_tb)
 
     # step 0: check if this is a required field
+    # if this column is optional, we skip
     if (is_field_missing) {
       msg_new <- .msg("- Cannot locate required field: {fieldname}. Please add
                       the column into the {table_type} processed data file.")
