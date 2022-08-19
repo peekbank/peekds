@@ -67,13 +67,13 @@ validate_table <- function(df_table, table_type) {
     }
 
     # step 2: check if values are in the required type/format
-    if (!fieldoptions$null & (fieldclass == "IntegerField" | fieldclass == "ForeignKey")) {
+    if (!is_null_allowed & (fieldclass == "IntegerField" | fieldclass == "ForeignKey")) {
       is_type_valid <- is.integer(content_tb)
       if (!is_type_valid) {
-        msg_new <- .msg("- Column {fieldname} should contain integers only.")
+        msg_new <- .msg("- ForeignKey column {fieldname} should contain integers only.")
         msg_error <- c(msg_error, msg_new)
       }
-    } else if (!fieldoptions$null & fieldclass == "CharField") {
+    } else if (!is_null_allowed & fieldclass == "CharField") {
       # numbers are allowed here as well since numbers can be converted into
       # chars
       is_type_valid <- is.character(content_tb) |
