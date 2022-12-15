@@ -43,7 +43,7 @@ validate_table <- function(df_table, table_type) {
     }
 
     # step 1: check if values in primary_key and unique-option fields are unique
-    content_tb <- df_table[, fieldname]
+    content_tb <- df_table %>% pull(fieldname)
 
     if (is_primary | isTRUE(fieldoptions$unique)) {
       # first check if primary key is in integer forms and start from zero
