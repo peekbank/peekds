@@ -4,6 +4,10 @@
 #' @param df_table the dataframe to be saved
 #' @param table_type the type of dataframe, for the most updated table types
 #'   specified by schema, please use function list_ds_tables()
+#' @param is_null_field_required by default is set to TRUE which means that
+#'   all the columns in the json file are required; when user specifically
+#'   sets this to FALSE, then the fields that are allowed null values are not
+#'   required.
 #'
 #' @return TRUE when the input data frame is compliant with json specification,
 #'   such as having all the required columns, primary key field has unique
@@ -15,7 +19,7 @@
 #' }
 #'
 #' @export
-validate_table <- function(df_table, table_type) {
+validate_table <- function(df_table, table_type, is_null_field_required = TRUE) {
   msg_error <- c()
   colnames_table <- colnames(df_table)
 
@@ -32,6 +36,13 @@ validate_table <- function(df_table, table_type) {
     is_primary <- isTRUE(fieldoptions$primary_key)
     is_null_allowed <- fieldoptions$null
     is_field_missing <- is.na(idx_tb)
+
+    # when user specifically sets this to FALSE, then the fields that are
+    # allowed null values are not required.
+    if (!is_null_field_required & is_null_allowed & is_field_missing) {
+      #warning("Field {fieldname} is not present, but it is not a required field.")
+      next
+    }
 
     # step 0: check if this is a required field
     # if this column is optional, we skip
@@ -168,7 +179,7 @@ validate_table <- function(df_table, table_type) {
 #' }
 #'
 #' @export
-validate_for_db_import <- function(dir_csv, file_ext = ".csv") {
+validate_for_db_import <- function(dir_csv, file_ext = ".csv", is_null_field_required = TRUE) {
   # check coding method
   coding_file <- file.path(dir_csv, paste0(table_type = "administrations",
                                            file_ext))
@@ -190,7 +201,7 @@ validate_for_db_import <- function(dir_csv, file_ext = ".csv") {
     if (file.exists(file_csv)) {
       # read in csv file and check if the data is valid
       df_table <- utils::read.csv(file_csv)
-      msg_error <- validate_table(df_table, table_type)
+      msg_error <- validate_table(df_table, table_type, is_null_field_required)
       if (!is.null(msg_error)) {
         msg_error <- .msg("The processed data file {table_type} failed to pass
                           the validator for database import with these error
