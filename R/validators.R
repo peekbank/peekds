@@ -9,9 +9,10 @@
 #'   sets this to FALSE, then the fields that are allowed null values are not
 #'   required.
 #'
-#' @return TRUE when the input data frame is compliant with json specification,
-#'   such as having all the required columns, primary key field has unique
-#'   values, etc.
+#' @return an empty string when the input data frame is compliant with json
+#'   specification, such as having all the required columns, primary key field
+#'   has unique values, etc. Otherwise, the function returns a list of messages
+#'   describing detailed issues that needs to be fixed
 #'
 #' @examples
 #' \dontrun{
@@ -163,6 +164,32 @@ validate_table <- function(df_table, table_type, is_null_field_required = TRUE) 
   return(msg_error)
 }
 
+#' Check if within aoi_timepoints table, there is no duplication in all the administration_ids
+#'   associated with each individual trial_id
+#'
+#' @param df_table the aoi_timepoints dataframe
+#'
+#' @return an empty string when all the administration_ids are unique within each trial_id;
+#'   Otherwise, the error message will be returned.
+#'
+#' @examples
+#' \dontrun{
+#' is_valid <- validate_table(df_table = df_table, table_type = "xy_data")
+#' }
+#'
+#' @export
+validate_trial_uniqueness_constraint <- function(df_aoi_timepoints) {
+  msg_error <- c()
+
+  num_admins_per_trial_id = aggregate(administration_id  ~ trial_id , df_aoi_timepoints, function(x){length(unique(x))})
+
+  if (any(num_admins_per_trial_id$administration_id != 1)){
+    msg_error <- .msg('Multiple administrations detected for the same trial ID. Make sure that trials are split out by subject to allow subject-specific trial exclusion')
+  }
+
+  return(msg_error)
+}
+
 #' check all csv files against database schema for database import
 #'
 #' @param dir_csv the folder directory containing all the csv files, the path
@@ -196,12 +223,16 @@ validate_for_db_import <- function(dir_csv, file_ext = ".csv", is_null_field_req
   # table_list <- table_list[table_list != "admin"];
   msg_error_all <- c()
 
+  #######################################################
+  # start checking each table format against json
+  dict_tables = list()
+
   for (table_type in table_list) {
     file_csv <- file.path(dir_csv, paste0(table_type, file_ext))
     if (file.exists(file_csv)) {
       # read in csv file and check if the data is valid
-      df_table <- utils::read.csv(file_csv)
-      msg_error <- validate_table(df_table, table_type, is_null_field_required)
+      dict_tables[[table_type]] <- utils::read.csv(file_csv)
+      msg_error <- validate_table(dict_tables[[table_type]], table_type, is_null_field_required)
       if (!is.null(msg_error)) {
         msg_error <- .msg("The processed data file {table_type} failed to pass
                           the validator for database import with these error
@@ -217,5 +248,12 @@ validate_for_db_import <- function(dir_csv, file_ext = ".csv", is_null_field_req
       warning(.msg("Cannot find required file: {file_csv}"))
     }
   }
+
+  #######################################################
+  # start cross-table validation
+  msg_error <- validate_trial_uniqueness_constraint(dict_tables[['aoi_timepoints']])
+  message(msg_error)
+  msg_error_all <- c(msg_error_all, msg_error)
+
   return(msg_error_all)
 }
