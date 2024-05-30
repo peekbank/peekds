@@ -5,18 +5,24 @@
 \title{Check if a dataframe/table is compliant to peekbank json before database
 import}
 \usage{
-validate_table(df_table, table_type)
+validate_table(df_table, table_type, is_null_field_required = TRUE)
 }
 \arguments{
 \item{df_table}{the dataframe to be saved}
 
 \item{table_type}{the type of dataframe, for the most updated table types
 specified by schema, please use function list_ds_tables()}
+
+\item{is_null_field_required}{by default is set to TRUE which means that
+all the columns in the json file are required; when user specifically
+sets this to FALSE, then the fields that are allowed null values are not
+required.}
 }
 \value{
-TRUE when the input data frame is compliant with json specification,
-  such as having all the required columns, primary key field has unique
-  values, etc.
+an empty string when the input data frame is compliant with json
+  specification, such as having all the required columns, primary key field
+  has unique values, etc. Otherwise, the function returns a list of messages
+  describing detailed issues that needs to be fixed
 }
 \description{
 Check if a dataframe/table is compliant to peekbank json before database

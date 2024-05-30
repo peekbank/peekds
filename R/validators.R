@@ -161,6 +161,84 @@ validate_table <- function(df_table, table_type, is_null_field_required = TRUE) 
     }
   }
 
+
+  # STEP 4.3:
+  # if subjects table, then check if cdi_responses in subject_aux_data
+  # has the correct format
+
+  if (table_type == "subjects" && fieldname == "subject_aux_data") {
+    # unpack subject aux data from JSON
+    sad <- df_table %>%
+      dplyr::select(lab_subject_id, subject_aux_data) %>%
+      peekbankr:::unpack_aux_data() %>%
+      unnest(subject_aux_data) %>%
+      # only keep those with cdi data
+      filter(sapply(.data[["cdi_responses"]], class) == "data.frame")
+
+    if ("cdi_responses" %in% colnames(sad)) {
+      # check that each CDI response has the correct columns
+      msg_new <- NULL
+
+      purrr::walk(sad$cdi_responses, \(cdi) {
+
+        if(nrow(cdi) == 0){
+          return()
+        }
+
+        missing_cdi <- setdiff(c("instrument_type", "measure", "age",
+                                 "rawscore", "language"),
+                               colnames(cdi))
+
+        if (length(missing_cdi) > 0) {
+          msg_new <<- .msg("- Some subject(s) have CDI responses that are missing
+                          the following required fields: {missing_cdi}.")
+        }
+      })
+
+      if(!is.null(msg_new)){
+        msg_error <- c(msg_error, msg_new)
+      }
+
+      # check for correct format of CDI response columns
+      cdi <- sad %>%
+        unnest(cdi_responses)
+
+      if (any(!(cdi$instrument_type %in% c("wg", "ws", "wsshort")))) {
+        msg_new <- .msg("- Some subject(s) have CDI responses that have an
+                          incorrect instrument_type.")
+        msg_error <- c(msg_error, msg_new)
+      }
+      if (any(!(cdi$measure %in% c("prod", "comp")))) {
+        msg_new <- .msg("- Some subject(s) have CDI responses that have an
+                          incorrect measure")
+        msg_error <- c(msg_error, msg_new)
+      }
+
+      if (any(!is.numeric(cdi$age))) {
+        msg_new <- .msg("- Some subject(s) have CDI responses that have a
+                          non-numeric age.")
+        msg_error <- c(msg_error, msg_new)
+      }
+      if (any(!is.numeric(cdi$rawscore))) {
+        msg_new <- .msg("- Some subject(s) have CDI responses that have a
+                          non-numeric rawscore.")
+        msg_error <- c(msg_error, msg_new)
+      }
+      if ("percentile" %in% colnames(cdi)){ # separate conditions as & does not short-circut
+          if(any(!is.numeric(cdi$percentile))) {
+        msg_new <- .msg("- Some subject(s) have CDI responses that have a
+                          non-numeric percentile.")
+        msg_error <- c(msg_error, msg_new)
+          }
+        }
+      if (any(class(cdi$language) != "character")) {
+        msg_new <- .msg("- Some subject(s) have CDI responses that have a
+                          non-character language.")
+        msg_error <- c(msg_error, msg_new)
+      }
+    }
+  }
+
   return(msg_error)
 }
 

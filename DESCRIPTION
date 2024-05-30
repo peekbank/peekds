@@ -1,7 +1,7 @@
 Package: peekds
 Type: Package
 Title: Provides data standard for peekbank
-Version: 0.1.1.9000
+Version: 0.1.1.9001
 Authors@R: c(
     person("Linger", "Xu", email = "lingertxu@gmail.com", role = c("aut", "cre")),
     person("Mika", "Braginsky", email = "mika.br@gmail.com", role = "ctb"),
@@ -27,4 +27,4 @@ Imports:
   rlang (>= 0.4.10),
   stringr (>= 1.4.0),
   tidyr (>= 1.1.2)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3

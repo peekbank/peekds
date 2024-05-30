@@ -4,7 +4,11 @@
 \alias{validate_for_db_import}
 \title{check all csv files against database schema for database import}
 \usage{
-validate_for_db_import(dir_csv, file_ext = ".csv")
+validate_for_db_import(
+  dir_csv,
+  file_ext = ".csv",
+  is_null_field_required = TRUE
+)
 }
 \arguments{
 \item{dir_csv}{the folder directory containing all the csv files, the path
