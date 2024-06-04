@@ -2,10 +2,11 @@
 
 This is the "peek data standard" package, which facilitates writing scripts that convert arbitrary 2 alternative word recognition eye-tracking datasets to the `peekds` format, which allows import in [Peekbank](http://peekbank.stanford.edu). 
 
-### Install `peekbankr` from GitHub:
+### Install `peekbands` from GitHub:
 
 ```
 # install.packages("remotes")
+remotes::install_github("langcog/peekbankr") # This dependency is not automatically installed
 remotes::install_github("langcog/peekds")
 ```
 
