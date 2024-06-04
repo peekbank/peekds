@@ -27,5 +27,5 @@ Imports:
   rlang (>= 0.4.10),
   stringr (>= 1.4.0),
   tidyr (>= 1.1.2),
-  peekbankr(>= 0.1.1.9003)
+  peekbankr(>= 0.1.1.9004)
 RoxygenNote: 7.2.3
