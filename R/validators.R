@@ -20,7 +20,8 @@
 #' }
 #'
 #' @export
-validate_table <- function(df_table, table_type, is_null_field_required = TRUE) {
+validate_table <- function(df_table, table_type, cdi_expected, is_null_field_required = TRUE) {
+
   msg_error <- c()
   colnames_table <- colnames(df_table)
 
@@ -171,15 +172,26 @@ validate_table <- function(df_table, table_type, is_null_field_required = TRUE) 
     sad <- df_table %>%
       dplyr::select(lab_subject_id, subject_aux_data) %>%
       peekbankr:::unpack_aux_data() %>%
-      unnest(subject_aux_data) %>%
-      # only keep those with cdi data
-      filter(sapply(.data[["cdi_responses"]], class) == "data.frame")
+      unnest(subject_aux_data)
+
+    if(cdi_expected && !("cdi_responses" %in% colnames(sad))){
+      msg_error <- c(msg_error, "No CDI data found, check subjects.csv and the column specification")
+    }
 
     if ("cdi_responses" %in% colnames(sad)) {
+
+      if(!cdi_expected){
+        msg_error <- c(msg_error, "No cdi expected, but CDI data found")
+      }
+
+      sad_cdi <- sad %>%
+        # only keep those with cdi data
+        filter(sapply(.data[["cdi_responses"]], class) == "data.frame")
+
       # check that each CDI response has the correct columns
       msg_new <- NULL
 
-      purrr::walk(sad$cdi_responses, \(cdi) {
+      purrr::walk(sad_cdi$cdi_responses, \(cdi) {
 
         if(nrow(cdi) == 0){
           return()
@@ -200,7 +212,7 @@ validate_table <- function(df_table, table_type, is_null_field_required = TRUE) 
       }
 
       # check for correct format of CDI response columns
-      cdi <- sad %>%
+      cdi <- sad_cdi %>%
         unnest(cdi_responses)
 
       if (any(!(cdi$instrument_type %in% c("wg", "ws", "wsshort")))) {
@@ -246,13 +258,17 @@ validate_table <- function(df_table, table_type, is_null_field_required = TRUE) 
 #'   associated with each individual trial_id
 #'
 #' @param df_table the aoi_timepoints dataframe
+#' @param cdi_expected specifies whether cdi_data is to be expected to be present in the imported data;
+#'      only relevant for subjects table.
+#'      We could consider creating a special table type, so that invalid combinations of table_type and cdi_expected cannot happen, but it does not break anything, so low priority
+#'
 #'
 #' @return an empty string when all the administration_ids are unique within each trial_id;
 #'   Otherwise, the error message will be returned.
 #'
 #' @examples
 #' \dontrun{
-#' is_valid <- validate_table(df_table = df_table, table_type = "xy_data")
+#' is_valid <- validate_table(df_table = df_table, table_type = "xy_data", cdi_expected = FALSE)
 #' }
 #'
 #' @export
@@ -273,6 +289,7 @@ validate_trial_uniqueness_constraint <- function(df_aoi_timepoints) {
 #' @param dir_csv the folder directory containing all the csv files, the path
 #'   should end in "processed_data"
 #' @param file_ext the default is ".csv"
+#' @param cdi_expected specifies whether cdi_data is to be expected to be present in the imported data
 #'
 #' @return an empty string if all tables passed the validator; otherwise, the
 #'   function returns a list of messages describing detailed issues that needs
@@ -284,7 +301,12 @@ validate_trial_uniqueness_constraint <- function(df_aoi_timepoints) {
 #' }
 #'
 #' @export
-validate_for_db_import <- function(dir_csv, file_ext = ".csv", is_null_field_required = TRUE) {
+validate_for_db_import <- function(dir_csv, cdi_expected, file_ext = ".csv", is_null_field_required = TRUE) {
+
+  if(missing(cdi_expected)){
+    stop("Need to specifiy cdi_expected boolean argument to validator")
+  }
+
   # check coding method
   coding_file <- file.path(dir_csv, paste0(table_type = "administrations",
                                            file_ext))
@@ -310,7 +332,7 @@ validate_for_db_import <- function(dir_csv, file_ext = ".csv", is_null_field_req
     if (file.exists(file_csv)) {
       # read in csv file and check if the data is valid
       dict_tables[[table_type]] <- utils::read.csv(file_csv)
-      msg_error <- validate_table(dict_tables[[table_type]], table_type, is_null_field_required)
+      msg_error <- validate_table(dict_tables[[table_type]], table_type, cdi_expected, is_null_field_required)
       if (!is.null(msg_error)) {
         msg_error <- .msg("The processed data file {table_type} failed to pass
                           the validator for database import with these error

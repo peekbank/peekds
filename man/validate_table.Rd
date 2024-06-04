@@ -5,7 +5,12 @@
 \title{Check if a dataframe/table is compliant to peekbank json before database
 import}
 \usage{
-validate_table(df_table, table_type, is_null_field_required = TRUE)
+validate_table(
+  df_table,
+  table_type,
+  cdi_expected,
+  is_null_field_required = TRUE
+)
 }
 \arguments{
 \item{df_table}{the dataframe to be saved}

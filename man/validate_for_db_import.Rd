@@ -6,6 +6,7 @@
 \usage{
 validate_for_db_import(
   dir_csv,
+  cdi_expected,
   file_ext = ".csv",
   is_null_field_required = TRUE
 )
@@ -13,6 +14,8 @@ validate_for_db_import(
 \arguments{
 \item{dir_csv}{the folder directory containing all the csv files, the path
 should end in "processed_data"}
+
+\item{cdi_expected}{specifies whether cdi_data is to be expected to be present in the imported data}
 
 \item{file_ext}{the default is ".csv"}
 }
