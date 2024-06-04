@@ -47,7 +47,7 @@ get_json_fields <- function(table_type) {
 
 #' List the tables required based on coding method
 #'
-#' @param coding_method a string indicating method used in the experiment for
+#' @param coding_method a list of strings indicating the methods used in the experiment for
 #'   coding gaze data, to get the list of current coding methods, please use
 #'   function list_coding_methods()
 #'
@@ -59,7 +59,7 @@ get_json_fields <- function(table_type) {
 #' }
 #'
 #' @export
-list_ds_tables <- function(coding_method = "eyetracking") {
+list_ds_tables <- function(coding_methods = c("eyetracking")) {
   # get json file from github
   peekjson <- get_peekjson()
   # get the list of tables other than admin
@@ -70,10 +70,11 @@ list_ds_tables <- function(coding_method = "eyetracking") {
                                            c("xy_timepoints",
                                              "aoi_region_sets"))]
 
-  if (coding_method %in% c("eyetracking", "automated gaze coding")) {
+  # if any are eyetracking or automated gaze coding data, require all tables
+  if (length(intersect(coding_methods, c("eyetracking", "automated gaze coding")))) {
     table_list <- table_list_auto
-  } else if (coding_method %in% c("manual gaze coding",
-                                  "preprocessed eyetracking")) {
+  } else if (length(intersect(coding_methods, c("manual gaze coding",
+                                  "preprocessed eyetracking")))) {
     table_list <- table_list_manual
   } else {
     stop(.msg("Invalid coding method type! The type can only be one of the

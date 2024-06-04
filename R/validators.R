@@ -312,13 +312,13 @@ validate_for_db_import <- function(dir_csv, cdi_expected, file_ext = ".csv", is_
                                            file_ext))
   if (file.exists(coding_file)) {
     coding_table <- utils::read.csv(coding_file)
-    coding_method <- unique(coding_table[, "coding_method"])
+    coding_methods <- unique(coding_table[, "coding_method"])
   } else {
     stop("Cannot find required administrations file.")
   }
 
   # fetch the table list based on coding method
-  table_list <- list_ds_tables(coding_method)
+  table_list <- list_ds_tables(coding_methods)
   # admin table is not required
   # table_list <- table_list[table_list != "admin"];
   msg_error_all <- c()

@@ -4,10 +4,10 @@
 \alias{list_ds_tables}
 \title{List the tables required based on coding method}
 \usage{
-list_ds_tables(coding_method = "eyetracking")
+list_ds_tables(coding_methods = c("eyetracking"))
 }
 \arguments{
-\item{coding_method}{a string indicating method used in the experiment for
+\item{coding_method}{a list of strings indicating the methods used in the experiment for
 coding gaze data, to get the list of current coding methods, please use
 function list_coding_methods()}
 }
