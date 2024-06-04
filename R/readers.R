@@ -70,6 +70,12 @@ list_ds_tables <- function(coding_methods = c("eyetracking")) {
                                            c("xy_timepoints",
                                              "aoi_region_sets"))]
 
+  if(!all(coding_methods %in% c("eyetracking", "automated gaze coding", "manual gaze coding", "preprocessed eyetracking"))){
+    stop(.msg("Invalid coding method type! The type can only be one of the
+              following: {paste0(list_coding_methods(), collapse = ', ')}."))
+  }
+
+
   # if any are eyetracking or automated gaze coding data, require all tables
   if (length(intersect(coding_methods, c("eyetracking", "automated gaze coding")))) {
     table_list <- table_list_auto
