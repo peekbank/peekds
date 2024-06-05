@@ -4,13 +4,13 @@
 \alias{is_table_required}
 \title{Check if a certain table is required according to schema}
 \usage{
-is_table_required(table_type, coding_method)
+is_table_required(table_type, coding_methods)
 }
 \arguments{
 \item{table_type}{the type of dataframe, for the most updated table types
 specified by schema, please use function list_ds_tables()}
 
-\item{coding_method}{method used in the experiment for coding gaze data, to
+\item{coding_methods}{methods used in the experiment for coding gaze data, to
 get the list of current coding methods, please use function
 list_coding_methods()}
 }

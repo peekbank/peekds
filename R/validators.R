@@ -118,7 +118,7 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
     # if aoi/xy_timepoints table, then check if resampling was done
     if (table_type == "aoi_timepoints") {
       remainder <- unique(df_table$t_norm %% pkg_globals$SAMPLE_DURATION)
-      if (remainder != 0) {
+      if (length(remainder) > 1 || remainder != 0) {
         msg_new <- .msg("- Column t_norm in table {table_type} is notsampled
                         at 40HZ.")
         msg_error <- c(msg_error, msg_new)
@@ -126,7 +126,7 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
     }
     if (table_type == "xy_timepoints") {
       remainder <- unique(df_table$t_norm %% pkg_globals$SAMPLE_DURATION)
-      if (remainder != 0) {
+      if (length(remainder) > 1 || remainder != 0) {
         msg_new <- .msg("- Column t_norm in table {table_type} is not sampled
                         at 40HZ.")
         msg_error <- c(msg_error, msg_new)
@@ -344,8 +344,8 @@ validate_for_db_import <- function(dir_csv, cdi_expected, file_ext = ".csv", is_
         print(.msg("The processed data file {table_type} passed the
                    validator!"))
       }
-    } else if (is_table_required(table_type, coding_method)) {
-      warning(.msg("Cannot find required file: {file_csv}"))
+    } else if (is_table_required(table_type, coding_methods)) {
+      msg_error_all <- c(msg_error_all, .msg("Cannot find required file: {file_csv}"))
     }
   }
 

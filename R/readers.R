@@ -111,7 +111,7 @@ list_coding_methods <- function() {
 #'
 #' @param table_type the type of dataframe, for the most updated table types
 #'   specified by schema, please use function list_ds_tables()
-#' @param coding_method method used in the experiment for coding gaze data, to
+#' @param coding_methods methods used in the experiment for coding gaze data, to
 #'   get the list of current coding methods, please use function
 #'   list_coding_methods()
 #'
@@ -123,8 +123,8 @@ list_coding_methods <- function() {
 #'                                  coding_method = "manual gaze coding")
 #' }
 #' @export
-is_table_required <- function(table_type, coding_method) {
-  table_list <- list_ds_tables(coding_method)
+is_table_required <- function(table_type, coding_methods) {
+  table_list <- list_ds_tables(coding_methods)
   is_required <- table_type %in% table_list
   return(is_required)
 }
