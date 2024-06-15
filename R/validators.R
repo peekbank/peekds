@@ -59,13 +59,19 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
     content_tb <- df_table %>% dplyr::pull(fieldname)
 
     if (is_primary | isTRUE(fieldoptions$unique)) {
-      # first check if primary key is in integer forms and start from zero
+      # first check if primary key is in integer forms, start from zero and are sequential
       if (is_primary) {
         content_tb <- as.integer(content_tb)
         if (min(content_tb) != 0) {
           msg_new <- .msg("- Primary key field {fieldname} should start at 0.")
           msg_error <- c(msg_error, msg_new)
         }
+        # check if ids are incremented correctly
+        if(length(content_tb) > 1 && any(na.omit(sort(content_tb) - dplyr::lag(sort(content_tb)) != 1))){
+          msg_new <- .msg("- Primary key field {fieldname} is missing ids in its sequence. IDs must start at 0 and increment by 1 each")
+          msg_error <- c(msg_error, msg_new)
+        }
+
       }
       # make sure primary key and unique fields have unique values
       is_unique <- length(content_tb) == length(unique(content_tb))
@@ -162,31 +168,29 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
     }
   }
 
-
   # STEP 4.3:
   # if subjects table, then check if cdi_responses in subject_aux_data
   # has the correct format
 
-  if (table_type == "subjects" && fieldname == "subject_aux_data") {
+  if (table_type == "subjects") {
     # unpack subject aux data from JSON
     sad <- df_table %>%
       dplyr::select(lab_subject_id, subject_aux_data) %>%
       peekbankr:::unpack_aux_data() %>%
-      unnest(subject_aux_data)
+      tidyr::unnest(subject_aux_data)
 
     if(cdi_expected && !("cdi_responses" %in% colnames(sad))){
       msg_error <- c(msg_error, "No CDI data found, check subjects.csv and the column specification")
     }
 
     if ("cdi_responses" %in% colnames(sad)) {
-
       if(!cdi_expected){
         msg_error <- c(msg_error, "No cdi expected, but CDI data found")
       }
 
       sad_cdi <- sad %>%
         # only keep those with cdi data
-        filter(sapply(.data[["cdi_responses"]], class) == "data.frame")
+        dplyr::filter(sapply(.data[["cdi_responses"]], class) == "data.frame")
 
       # check that each CDI response has the correct columns
       msg_new <- NULL
@@ -213,7 +217,7 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
 
       # check for correct format of CDI response columns
       cdi <- sad_cdi %>%
-        unnest(cdi_responses)
+        tidyr::unnest(cdi_responses)
 
       if (any(!(cdi$instrument_type %in% c("wg", "ws", "wsshort")))) {
         msg_new <- .msg("- Some subject(s) have CDI responses that have an
@@ -248,6 +252,69 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
                           non-character language.")
         msg_error <- c(msg_error, msg_new)
       }
+
+      if (any(!(cdi$language %in% pkg_globals$WORDBANK_ALLOWED_LANGUAGES))) {
+        print(setdiff(cdi$language, pkg_globals$WORDBANK_ALLOWED_LANGUAGES))
+        msg_new <- .msg("- Some subject(s) have CDI responses that have a language that does not follow the Wordbank specification.")
+        msg_error <- c(msg_error, msg_new)
+      }
+    }
+  }
+
+  # STEP 5: trial_types table
+  if (table_type == "trial_types"){
+
+    # check if there are any entries that are duplicate and only differ by id
+    if((df_table %>% select(-trial_type_id) %>% distinct() %>% nrow()) != (df_table %>% nrow())){
+      msg_new <- .msg("- trial types are not unique.")
+      msg_error <- c(msg_error, msg_new)
+    }
+  }
+
+  # STEP 6:
+  # if stimuli table, check if there are any entries that are duplicate and only differ by id
+  if (table_type == "stimuli"){
+    if((df_table %>% select(-stimulus_id) %>% distinct() %>% nrow()) != (df_table %>% nrow())){
+      msg_new <- .msg("- stimulus entries are not unique.")
+      msg_error <- c(msg_error, msg_new)
+    }
+  }
+
+  # STEP 7: check if the subjects age is consistently converted in the administration table
+  if (table_type == "administrations") {
+
+    # in the case of years, we need to differentiate when converting:
+    # if all years are given in full numbers, the conversion is not *12, but rather *12 + 6
+    years_given_full <- !any(df_table %>%
+                               dplyr::filter(lab_age_units == "years") %>%
+                               dplyr::mutate(year_is_decimal = lab_age-floor(lab_age) != 0) %>%
+                               dplyr::pull(year_is_decimal)
+                             )
+
+    converted_ages <- df_table %>%
+      filter(!is.na(lab_age)) %>%
+      dplyr::mutate(converted_age = dplyr::case_when(
+        lab_age_units == "months" ~ lab_age,
+        lab_age_units == "years" ~ lab_age * 12 + ifelse(years_given_full, 6, 0),
+        lab_age_units == "days" ~ lab_age/(365.25/12),
+        TRUE ~ NA,
+        )) %>%
+      dplyr::pull(converted_age)
+
+    if(!isTRUE(all.equal(df_table %>% filter(!is.na(lab_age)) %>% pull(age),converted_ages))){
+
+      msg_new <- .msg("- some ages do not match the conversion according to lab_age_unit and lab_age.")
+      msg_error <- c(msg_error, msg_new)
+    }
+  }
+
+  # STEP 8: trials table
+  if (table_type == "trials"){
+
+    # check if there are cases where there is an exclusion reason but excluded is false
+    if(any(df_table %>% mutate(incorrectly_included = !excluded & (!is.na(exclusion_reason) & exclusion_reason != "")) %>% pull(incorrectly_included))){
+      msg_new <- .msg("- some trials have exclusion reasons even though they are marked as included.")
+      msg_error <- c(msg_error, msg_new)
     }
   }
 
@@ -354,6 +421,63 @@ validate_for_db_import <- function(dir_csv, cdi_expected, file_ext = ".csv", is_
   msg_error <- validate_trial_uniqueness_constraint(dict_tables[['aoi_timepoints']])
   message(msg_error)
   msg_error_all <- c(msg_error_all, msg_error)
+
+  # check if there are any duplicate trial order values within each administration
+
+  if(nrow(dict_tables[['administrations']] %>%
+          left_join(dict_tables[['aoi_timepoints']], by = join_by(administration_id)) %>%
+          left_join(dict_tables[['trials']], by = join_by(trial_id)) %>%
+          distinct(administration_id, trial_id, trial_order) %>%
+          group_by(administration_id) %>%
+          filter(duplicated(trial_order) | duplicated(trial_order, fromLast = TRUE)) %>%
+          ungroup()) != 0){
+    msg_error_all <- c(msg_error_all, .msg("Global issue: - trials order values are not unique within administrations"))
+  }
+
+  # check if there are any orphaned ids left with no connection to other tables
+  errors_orphans <- unlist(lapply(
+    list(
+      c("trials", "aoi_timepoints", "trial_id"),
+      c("administrations", "aoi_timepoints", "administration_id"),
+      c("administrations", "subjects", "subject_id"),
+      c("trials", "trial_types", "trial_type_id"),
+      c("stimuli", "trial_types", "stimulus_id")
+    ),
+    function(vec) {
+
+      table_1 <- dict_tables[[vec[1]]]
+      table_2 <- dict_tables[[vec[2]]]
+      join_id <- vec[3]
+
+      if(vec[1] == "stimuli" && vec[2] == "trial_types"){
+        table_2 <- table_2 %>% pivot_longer(
+          cols = c(distractor_id, target_id),
+          names_to = "stimulus_type",
+          values_to = "stimulus_id"
+        )
+      }
+
+      errors <- c()
+
+      one_not_in_two <- table_1 %>%
+        dplyr::anti_join(table_2, by = join_id)
+      if(nrow(one_not_in_two) != 0){
+        print(one_not_in_two)
+        errors <- c(errors, .msg("Global issue: - not all {join_id} in {vec[1]} have a match in {vec[2]}"))
+      }
+
+      two_not_in_one <- table_2 %>%
+        dplyr::anti_join(table_1, by = join_id)
+      if(nrow(two_not_in_one) != 0){
+        print(two_not_in_one)
+        errors <- c(errors, .msg("Global issue: - not all {join_id} in {vec[2]} have a match in {vec[1]}"))
+      }
+
+      return(errors)
+    }
+  ))
+
+  msg_error_all <- c(msg_error_all, errors_orphans)
 
   return(msg_error_all)
 }

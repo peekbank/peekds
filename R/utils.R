@@ -18,6 +18,43 @@ pkg_globals$SCHEMA_FILE <- file.path("https://raw.githubusercontent.com",
                                      "langcog/peekbank/master/static",
                                      "peekbank-schema.json")
 
+pkg_globals$WORDBANK_ALLOWED_LANGUAGES = c("Danish",
+                                           "English (American)",
+                                           "English (Australian)",
+                                           "English (British)",
+                                           "French (French)",
+                                           "French (Quebecois)",
+                                           "German",
+                                           "Italian",
+                                           "Greek (Cypriot)",
+                                           "Norwegian",
+                                           "Portuguese (European)",
+                                           "Russian",
+                                           "Spanish (European)",
+                                           "Spanish (Mexican)",
+                                           "Swedish",
+                                           "Turkish",
+                                           "Croatian",
+                                           "Czech",
+                                           "Mandarin (Beijing)",
+                                           "Mandarin (Taiwanese)",
+                                           "Cantonese",
+                                           "Hebrew",
+                                           "Korean",
+                                           "Catalan",
+                                           "Dutch",
+                                           "Hungarian",
+                                           "Arabic (Saudi)",
+                                           "Latvian",
+                                           "Slovak",
+                                           "Kiswahili",
+                                           "American Sign Language",
+                                           "British Sign Language",
+                                           "Estonian",
+                                           "Kigiriama",
+                                           "Japanese")
+
+
 .msg <- function(s) {
   strwrap(prefix = " ", initial = "", glue(s, .envir = parent.frame()))
 }
