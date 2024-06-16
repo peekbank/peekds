@@ -28,6 +28,11 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
   fields_json <- get_json_fields(table_type = table_type)
   fieldnames_json <- fields_json$field_name
 
+  unwanted_columns <- setdiff(colnames_table, fieldnames_json)
+  if(length(unwanted_columns) > 0){
+    msg_error <- c(msg_error, .msg("- invalid columns found in {table_type}: {unwanted_columns}."))
+  }
+
   # start checking field/column one by one
   for (idx in 1:length(fieldnames_json)) {
     fieldname <- fieldnames_json[idx]
