@@ -90,6 +90,12 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
       }
     }
 
+    # step 1.5 check if any aux data is a top level list by mistake
+    if(grepl("aux", fieldname) && any(grepl("^\\[", content_tb))){
+      msg_new <- .msg("- {fieldname} should be an object at the top level or NA, not list.")
+      msg_error <- c(msg_error, msg_new)
+    }
+
     # step 2: check if values are in the required type/format
     if (!is_null_allowed & (fieldclass == "IntegerField" | fieldclass == "ForeignKey")) {
       is_type_valid <- is.integer(content_tb)
