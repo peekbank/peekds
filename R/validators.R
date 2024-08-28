@@ -230,7 +230,7 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
       cdi <- sad_cdi %>%
         tidyr::unnest(cdi_responses)
 
-      if (any(!(cdi$instrument_type %in% c("wg", "ws", "wsshort")))) {
+      if (any(!(cdi$instrument_type %in% c("wg", "ws", "wsshort", "wgshort")))) {
         msg_new <- .msg("- Some subject(s) have CDI responses that have an
                           incorrect instrument_type.")
         msg_error <- c(msg_error, msg_new)
@@ -433,6 +433,10 @@ validate_for_db_import <- function(dir_csv, cdi_expected, file_ext = ".csv", is_
   message(msg_error)
   msg_error_all <- c(msg_error_all, msg_error)
 
+  # check if
+  table_list
+
+
   # check if there are any duplicate trial order values within each administration
 
   if(nrow(dict_tables[['administrations']] %>%
@@ -445,15 +449,23 @@ validate_for_db_import <- function(dir_csv, cdi_expected, file_ext = ".csv", is_
     msg_error_all <- c(msg_error_all, .msg("Global issue: - trials order values are not unique within administrations"))
   }
 
+  table_pairs <- list(
+    c("trials", "aoi_timepoints", "trial_id"),
+    c("administrations", "aoi_timepoints", "administration_id"),
+    c("administrations", "subjects", "subject_id"),
+    c("trials", "trial_types", "trial_type_id"),
+    c("stimuli", "trial_types", "stimulus_id")
+  )
+
+  if("xy_timepoints" %in% table_list){
+    table_pairs <- table_pairs %>%
+      append(list(c("aoi_region_sets", "trial_types", "aoi_region_set_id"))) %>%
+      append(list(c("administrations", "xy_timepoints", "administration_id")))
+  }
+
   # check if there are any orphaned ids left with no connection to other tables
   errors_orphans <- unlist(lapply(
-    list(
-      c("trials", "aoi_timepoints", "trial_id"),
-      c("administrations", "aoi_timepoints", "administration_id"),
-      c("administrations", "subjects", "subject_id"),
-      c("trials", "trial_types", "trial_type_id"),
-      c("stimuli", "trial_types", "stimulus_id")
-    ),
+    table_pairs,
     function(vec) {
 
       table_1 <- dict_tables[[vec[1]]]
