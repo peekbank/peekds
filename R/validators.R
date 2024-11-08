@@ -212,13 +212,21 @@ validate_table <- function(df_table, table_type, cdi_expected, is_null_field_req
           return()
         }
 
-        missing_cdi <- setdiff(c("instrument_type", "measure", "age",
-                                 "rawscore", "language"),
+        columns_to_check <- c("instrument_type", "measure", "age", "rawscore", "language")
+
+        missing_cdi <- setdiff(columns_to_check,
                                colnames(cdi))
 
         if (length(missing_cdi) > 0) {
           msg_new <<- .msg("- Some subject(s) have CDI responses that are missing
                           the following required fields: {missing_cdi}.")
+        } else {
+          columns_with_na <- columns_to_check[sapply(cdi[columns_to_check], function(x) any(is.na(x)))]
+
+          if (length(columns_with_na) > 0) {
+            msg_new <<- .msg("- Some subject(s) have CDI responses with NA values in the following required fields:
+                   {paste(columns_with_na, collapse=', ')}.")
+          }
         }
       })
 
