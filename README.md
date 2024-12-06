@@ -1,3 +1,7 @@
+# Archival notice:
+
+The repo is archived in favor of [peekbankr](https://github.com/peekbank/peekbankr), as the functionality of the packages has been combined
+
 # peekds
 
 This is the "peek data standard" package, which facilitates writing scripts that convert arbitrary 2 alternative word recognition eye-tracking datasets to the `peekds` format, which allows import in [Peekbank](http://peekbank.stanford.edu). 
